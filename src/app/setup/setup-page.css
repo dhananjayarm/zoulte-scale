@@ -1,0 +1,19 @@
+.setup-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px 20px 56px;
+}
+
+.setup-page--narrow {
+  max-width: 720px;
+}
+
+.setup-head h1 {
+  margin: 0 0 2px;
+  font-size: 1.35rem;
+}
+
+.setup-head a {
+  color: var(--accent);
+  font-weight: 600;
+}

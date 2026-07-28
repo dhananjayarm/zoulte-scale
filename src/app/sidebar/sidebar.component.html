@@ -1,0 +1,49 @@
+<aside class="sidebar-v2" [class.is-collapsed]="collapsed">
+  <div class="sb-logo">
+    <span class="logo-box">ZS</span>
+    <span class="logo-text">Zoulte Scale</span>
+  </div>
+
+  @if (loadError()) {
+    <p class="menu-error">{{ loadError() }}</p>
+  }
+
+  <nav class="sb-nav">
+    @for (group of menuGroups(); track group.header) {
+      <div
+        class="sb-section"
+        [class.open]="isExpanded(group.header)"
+        (click)="toggleGroup(group.header)"
+      >
+        <span class="sb-sec-label">{{ group.header }}</span>
+        <span class="sb-sec-chevron">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </span>
+      </div>
+
+      <div class="sb-kids" [class.open]="isExpanded(group.header)">
+        @for (item of group.items; track item.link) {
+          <a
+            class="sb-kid"
+            [routerLink]="linkFor(item)"
+            routerLinkActive="active"
+            (click)="linkClicked.emit()"
+          >
+            {{ item.name }}
+          </a>
+        }
+      </div>
+    }
+  </nav>
+
+  <div class="sb-footer">
+    <span class="av av-md">{{ userInitials }}</span>
+    @if (userName) {
+      <div class="sb-footer-info">
+        <div class="n">{{ userName }}</div>
+      </div>
+    }
+  </div>
+</aside>

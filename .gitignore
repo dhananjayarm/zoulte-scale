@@ -40,3 +40,11 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Local station databases (never commit weighing data)
+*.db
+*.db-wal
+*.db-shm
+
+# Electron packaging output
+/release

@@ -1,0 +1,71 @@
+<div class="reports-page">
+  <header class="reports-header">
+    <h1>Reports</h1>
+    <p>View and access all available reports.</p>
+  </header>
+
+  <div class="section-label">
+    <span class="section-bar"></span>
+    <span>ALL REPORTS</span>
+  </div>
+
+  @if (loadError()) {
+    <div class="banner banner-error">{{ loadError() }}</div>
+  }
+
+  @if (!isLoading()) {
+    @if (cards().length) {
+      <div class="reports-grid">
+        @for (card of cards(); track card.item.menuId ?? card.item.link) {
+          <a class="report-card" [routerLink]="linkFor(card.item)">
+            <span class="report-icon" [class]="'icon-' + card.color">
+              @switch (card.iconKey) {
+                @case ('calendar') {
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                }
+                @case ('clock') {
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <polyline points="12 7 12 12 16 14"></polyline>
+                  </svg>
+                }
+                @case ('alert') {
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <line x1="12" y1="8" x2="12" y2="13"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                }
+                @case ('check') {
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                    <path d="M8 12l2.5 2.5L16 9"></path>
+                  </svg>
+                }
+                @default {
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="8" y1="13" x2="16" y2="13"></line>
+                    <line x1="8" y1="17" x2="16" y2="17"></line>
+                  </svg>
+                }
+              }
+            </span>
+            <span class="report-text">
+              <span class="report-title">{{ card.item.name }}</span>
+              <span class="report-desc">{{ card.item.description ?? card.item.name }}</span>
+            </span>
+          </a>
+        }
+      </div>
+    } @else {
+      <p class="empty-state">No reports available.</p>
+    }
+  }
+</div>

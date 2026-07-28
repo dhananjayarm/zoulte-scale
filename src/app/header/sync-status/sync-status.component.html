@@ -1,0 +1,91 @@
+<div class="status-strip">
+  @if (offlineUnlock.offlineSession()) {
+    <span class="chip chip--warn" title="Offline session — sign in online to sync, verify, and run reports">
+      <span class="chip__dot"></span>Capture only
+    </span>
+  }
+
+  @if (connectivity.online()) {
+    <span class="chip chip--success" title="Network connection is up">
+      <span class="chip__dot"></span>Online
+    </span>
+  } @else {
+    <span class="chip chip--danger" title="No network — captures queue locally">
+      <span class="chip__dot"></span>Offline
+    </span>
+  }
+
+  @switch (scaleState()) {
+    @case ('connected') {
+      <span class="chip chip--success" title="Scale is connected"><span class="chip__dot"></span>Scale</span>
+    }
+    @case ('connecting') {
+      <span class="chip chip--warn" title="Connecting to scale…"><span class="chip__dot"></span>Scale</span>
+    }
+    @case ('error') {
+      <span class="chip chip--danger" title="Scale error — check the connection"><span class="chip__dot"></span>Scale</span>
+    }
+    @default {
+      <span class="chip chip--pending" title="Scale not connected"><span class="chip__dot"></span>Scale</span>
+    }
+  }
+
+  @if (sync.enabled) {
+    <button
+      type="button"
+      class="sync-badge"
+      [class.sync-badge--attention]="sync.failed() > 0"
+      (click)="togglePanel()"
+      title="Sync queue"
+    >
+      @if (sync.failed() > 0) {
+        <span class="chip chip--danger"><span class="chip__dot"></span>{{ sync.failed() }} failed</span>
+      } @else if (sync.pending() > 0) {
+        <span class="chip chip--warn"><span class="chip__dot"></span>{{ sync.pending() }} pending</span>
+      } @else {
+        <span class="chip chip--success"><span class="chip__dot"></span>Synced</span>
+      }
+    </button>
+
+    @if (panelOpen()) {
+      <div class="sync-panel">
+        <div class="sync-panel__head">
+          <strong>Sync queue</strong>
+          <button type="button" class="sync-panel__action" (click)="syncNow()">Sync now</button>
+        </div>
+
+        @if (rows().length === 0) {
+          <p class="sync-panel__empty">Everything is synced.</p>
+        } @else {
+          <ul class="sync-panel__list">
+            @for (row of rows(); track row.outboxId) {
+              <li class="sync-panel__row">
+                <div class="sync-panel__row-main">
+                  <span class="sync-panel__type">{{ row.entityType }}</span>
+                  <span class="sync-panel__time">{{ row.createdAt | date: 'MMM d, HH:mm' }}</span>
+                  @switch (row.syncStatus) {
+                    @case ('DEAD_LETTER') {
+                      <span class="chip chip--danger">Failed</span>
+                    }
+                    @case ('RETRYING') {
+                      <span class="chip chip--warn">Retrying</span>
+                    }
+                    @default {
+                      <span class="chip chip--pending">Queued</span>
+                    }
+                  }
+                </div>
+                @if (row.lastError) {
+                  <div class="sync-panel__error">{{ row.lastError }}</div>
+                }
+                @if (row.syncStatus === 'DEAD_LETTER') {
+                  <button type="button" class="sync-panel__action" (click)="retry(row)">Retry</button>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    }
+  }
+</div>

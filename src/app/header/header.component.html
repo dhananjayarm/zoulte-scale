@@ -1,0 +1,65 @@
+<header class="app-header topbar-v2">
+  <button type="button" class="mobile_btn" (click)="toggleSidebar.emit()" aria-label="Toggle menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <div class="titles">
+    <h1>Zoulte Scale</h1>
+    <p class="subtitle">RS-232 balance capture over the Web Serial API</p>
+  </div>
+
+  <ul class="tb-right-controls">
+    <li class="nav-item">
+      <app-sync-status />
+    </li>
+    <li class="nav-item dropdown" [class.show]="dropdownOpen()">
+      <button type="button" class="tb-profile-btn" (click)="toggleDropdown()">
+        <span class="tb-avatar-v2">{{ userInitials }}</span>
+        @if (userName) {
+          <span class="tb-profile-info">
+            <span class="tb-profile-name">{{ userName }}</span>
+          </span>
+        }
+        <span class="tb-ctrl-chev">▾</span>
+      </button>
+
+      @if (dropdownOpen()) {
+        <div class="dropdown-menu tb-menu-dropdown">
+          @if (userName) {
+            <div class="tb-dd-header">
+              <div class="tb-dd-name">{{ userName }}</div>
+            </div>
+            <hr class="dropdown-divider" />
+          }
+
+          <div class="tb-dd-theme-row">
+            <span class="tb-dd-theme-label">Theme</span>
+            <div class="tb-theme-slider" [class.is-orange]="themeService.theme() === 'orange'">
+              <button
+                type="button"
+                class="tb-ts-opt"
+                [class.active]="themeService.theme() === 'blue'"
+                (click)="setTheme('blue')"
+              >
+                <span class="tb-ts-dot tb-ts-dot--blue"></span>Blue
+              </button>
+              <button
+                type="button"
+                class="tb-ts-opt"
+                [class.active]="themeService.theme() === 'orange'"
+                (click)="setTheme('orange')"
+              >
+                <span class="tb-ts-dot tb-ts-dot--orange"></span>Orange
+              </button>
+            </div>
+          </div>
+
+          <hr class="dropdown-divider" />
+          <button type="button" class="tb-menu-item tb-menu-danger" (click)="logout()">Sign Out</button>
+        </div>
+      }
+    </li>
+  </ul>
+</header>

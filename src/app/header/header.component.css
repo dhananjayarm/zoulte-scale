@@ -1,0 +1,262 @@
+:host {
+  display: contents;
+}
+
+.app-header.topbar-v2 {
+  position: fixed;
+  top: 0;
+  left: 220px;
+  right: 0;
+  height: 72px;
+  z-index: 101;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+}
+
+.mobile_btn {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.mobile_btn span {
+  display: block;
+  height: 2px;
+  background: var(--text);
+  border-radius: 1px;
+}
+
+.titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.titles h1 {
+  margin: 0;
+  font-size: 1.3rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subtitle {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Right-side controls */
+.tb-right-controls {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-item.dropdown {
+  position: relative;
+}
+
+/* Profile trigger */
+.tb-profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 4px;
+  height: 40px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.tb-profile-btn:hover {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+}
+
+.tb-avatar-v2 {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tb-profile-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tb-ctrl-chev {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+/* Dropdown menu */
+.dropdown-menu.tb-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  padding: 6px;
+  z-index: 2005;
+}
+
+.tb-dd-header {
+  padding: 10px 12px 6px;
+}
+
+.tb-dd-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.dropdown-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 4px 0;
+}
+
+.tb-dd-theme-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  gap: 12px;
+}
+
+.tb-dd-theme-label {
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.tb-theme-slider {
+  position: relative;
+  display: flex;
+  background: #f0f2f5;
+  border-radius: 20px;
+  padding: 3px;
+}
+
+.tb-theme-slider::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  height: calc(100% - 6px);
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 0;
+}
+
+.tb-theme-slider.is-orange::before {
+  transform: translateX(100%);
+}
+
+.tb-ts-opt {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  border: none;
+  background: transparent;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tb-ts-opt.active {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.tb-ts-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tb-ts-dot--blue {
+  background: #0057b8;
+}
+
+.tb-ts-dot--orange {
+  background: #c2410c;
+}
+
+.tb-menu-item {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  font-size: 0.85rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.tb-menu-danger {
+  color: #ef4444;
+}
+
+.tb-menu-danger:hover {
+  background: #fef2f2;
+}
+
+@media (max-width: 991.98px) {
+  .app-header.topbar-v2 {
+    left: 0;
+  }
+
+  .mobile_btn {
+    display: flex;
+  }
+}

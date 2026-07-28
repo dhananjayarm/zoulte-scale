@@ -1,0 +1,176 @@
+<div class="station">
+  @if (!isSupported) {
+    <div class="banner banner-error">
+      This browser doesn't support the Web Serial API. Open this app in Chrome or Edge, served over
+      HTTPS or localhost — or run the desktop station app.
+    </div>
+  }
+
+  <!-- ═══ Session card — set once per product/batch, then weigh repeatedly ═══ -->
+  <section class="card session-card">
+    @if (session(); as active) {
+      <div class="session-locked">
+        <div class="session-summary">
+          <div class="session-title-row">
+            <h2 class="session-product">{{ active.productName }}</h2>
+            <span class="chip chip--pending session-batch">Batch {{ active.batchNumber }}</span>
+          </div>
+          <p class="session-meta">
+            {{ active.manufacturerName }}
+            · Mfg {{ active.manufactureDate | date: 'yyyy-MM-dd' }}
+            · Exp {{ active.expiryDate | date: 'yyyy-MM-dd' }}
+          </p>
+        </div>
+        <div class="session-actions">
+          <div class="session-count">
+            <span class="session-count-value">{{ sessionCaptureCount() }}</span>
+            <span class="session-count-label">captures</span>
+          </div>
+          <button type="button" class="btn btn-secondary" (click)="changeSession()">Change product / batch</button>
+        </div>
+      </div>
+    } @else {
+      <h2>Weighing session</h2>
+      <p class="section-hint">Set the product and batch once — every capture records against it.</p>
+      <form class="session-form" [formGroup]="sessionForm" (ngSubmit)="startSession()">
+        <label class="field">
+          <span>Manufacturer</span>
+          <input type="text" formControlName="manufacturerName" placeholder="e.g. Acme Pharma Ltd." />
+        </label>
+        <label class="field">
+          <span>Product</span>
+          <input type="text" formControlName="productName" placeholder="e.g. Paracetamol 500mg" />
+        </label>
+        <label class="field">
+          <span>Batch number</span>
+          <input type="text" formControlName="batchNumber" placeholder="e.g. B-2026-0142" />
+        </label>
+        <label class="field">
+          <span>Manufacture date</span>
+          <input type="date" formControlName="manufactureDate" />
+        </label>
+        <label class="field">
+          <span>Expiry date</span>
+          <input type="date" formControlName="expiryDate" />
+        </label>
+        <button type="submit" class="btn btn-primary session-start">Start session</button>
+      </form>
+      @if (sessionForm.errors?.['expiryBeforeManufacture'] && sessionForm.get('expiryDate')?.touched) {
+        <div class="banner banner-error">Expiry date must be after the manufacture date.</div>
+      }
+    }
+  </section>
+
+  <!-- ═══ Hero readout — the instrument face ═══ -->
+  <section class="card readout-card" [class.readout-card--live]="isConnected()">
+    <div class="readout-top">
+      <div class="connection-controls">
+        @if (!isConnected()) {
+          <label class="field field--inline">
+            <span>Baud</span>
+            <select [(ngModel)]="baudRate" [disabled]="isConnecting()">
+              @for (rate of baudRates; track rate) {
+                <option [value]="rate">{{ rate }}</option>
+              }
+            </select>
+          </label>
+          <button class="btn btn-primary" (click)="connect()" [disabled]="isConnecting() || !isSupported">
+            {{ isConnecting() ? 'Connecting…' : 'Connect scale' }}
+          </button>
+        } @else {
+          <span class="chip chip--success"><span class="chip__dot"></span>Scale connected</span>
+          <button class="btn btn-ghost" (click)="disconnect()">Disconnect</button>
+        }
+      </div>
+      @if (portInfo(); as info) {
+        <span class="port-info">vendor {{ info.usbVendorId ?? '—' }} · product {{ info.usbProductId ?? '—' }}</span>
+      }
+    </div>
+
+    @if (lastError(); as error) {
+      <div class="banner banner-error">{{ error }}</div>
+    }
+    @if (!isConnected() && !isConnecting()) {
+      <div class="banner banner-warn">Scale disconnected — capture is blocked until it's back.</div>
+    }
+
+    <div class="readout" [class.readout--stable]="isStable()" [class.readout--idle]="!isConnected()">
+      <span class="readout-value">{{ latestReading()?.value ?? '—' }}</span>
+      <span class="readout-unit">{{ latestReading()?.unit ?? '' }}</span>
+    </div>
+
+    <div class="readout-state">
+      @if (isConnected()) {
+        @if (isStable()) {
+          <span class="chip chip--success"><span class="chip__dot"></span>Stable</span>
+        } @else if (latestReading()?.value != null) {
+          <span class="chip chip--warn"><span class="chip__dot"></span>Settling…</span>
+        } @else {
+          <span class="chip chip--pending"><span class="chip__dot"></span>No reading</span>
+        }
+      }
+    </div>
+
+    <button type="button" class="btn-capture" (click)="captureReading()" [disabled]="!canCapture()">
+      {{ isSaving() ? 'Saving…' : 'Capture' }}
+    </button>
+    @if (captureHint(); as hint) {
+      <p class="capture-hint">{{ hint }}</p>
+    }
+    @if (saveError()) {
+      <div class="banner banner-error">{{ saveError() }}</div>
+    }
+  </section>
+
+  <!-- ═══ Recent captures — confirmation + mistake-catching, not history ═══ -->
+  <section class="card recent-card">
+    <div class="recent-head">
+      <h2>Recent captures</h2>
+      <span class="recent-note">Full history and search live in Reports</span>
+    </div>
+
+    @if (loadError()) {
+      <div class="banner banner-error">{{ loadError() }}</div>
+    }
+
+    @if (recentCaptures().length) {
+      <ul class="recent-list">
+        @for (reading of recentCaptures(); track reading.uuid) {
+          <li class="recent-row">
+            <div class="recent-main">
+              <span class="recent-weight">{{ reading.weight }} <small>{{ reading.unit }}</small></span>
+              <span class="recent-product">{{ reading.productName }} · {{ reading.batchNumber }}</span>
+              <span class="recent-time">{{ reading.capturedAt | date: 'HH:mm:ss' }}</span>
+              @if (reading.syncStatus === 'SYNCED') {
+                <span class="chip chip--success"><span class="chip__dot"></span>Synced</span>
+              } @else {
+                <span class="chip chip--pending"><span class="chip__dot"></span>Pending</span>
+              }
+              @if (store.supportsVoid && voidingUuid() !== reading.uuid) {
+                <button type="button" class="btn-void" (click)="beginVoid(reading)">Void</button>
+              }
+            </div>
+
+            @if (voidingUuid() === reading.uuid) {
+              <div class="void-confirm">
+                <input
+                  type="text"
+                  class="void-reason"
+                  [(ngModel)]="voidReason"
+                  placeholder="reason for voiding (required)"
+                  autofocus
+                />
+                <button type="button" class="btn btn-danger" [disabled]="!voidReason.trim()" (click)="confirmVoid()">
+                  Void reading
+                </button>
+                <button type="button" class="btn btn-ghost" (click)="cancelVoid()">Cancel</button>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="empty-state">No captures yet — start a session, connect the scale, and press Capture.</p>
+    }
+  </section>
+</div>

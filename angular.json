@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "pharma-scale-web": {
+    "zoulte-scale": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -13,7 +13,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/pharma-scale-web",
+            "outputPath": "dist/zoulte-scale",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -25,6 +25,7 @@
               "src/assets"
             ],
             "styles": [
+              "src/assets/fonts/fonts.css",
               "src/styles.css"
             ],
             "scripts": []
@@ -43,7 +44,13 @@
                   "maximumError": "4kb"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ]
             },
             "development": {
               "optimization": false,
@@ -57,10 +64,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "pharma-scale-web:build:production"
+              "buildTarget": "zoulte-scale:build:production"
             },
             "development": {
-              "buildTarget": "pharma-scale-web:build:development"
+              "buildTarget": "zoulte-scale:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -68,7 +75,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "buildTarget": "pharma-scale-web:build"
+            "buildTarget": "zoulte-scale:build"
           }
         },
         "test": {
@@ -84,6 +91,7 @@
               "src/assets"
             ],
             "styles": [
+              "src/assets/fonts/fonts.css",
               "src/styles.css"
             ],
             "scripts": []

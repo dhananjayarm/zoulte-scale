@@ -1,0 +1,12 @@
+<div class="setup-page setup-page--narrow">
+  <header class="setup-head">
+    <h1>Material Categories</h1>
+    <p class="section-hint">Shared master data — categories created here apply across the platform.</p>
+  </header>
+
+  @if (facade.loadError()) {
+    <div class="banner banner-error">{{ facade.loadError() }}</div>
+  }
+
+  <app-category-card />
+</div>

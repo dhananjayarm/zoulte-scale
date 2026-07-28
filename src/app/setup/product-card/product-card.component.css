@@ -1,0 +1,76 @@
+/* Shared layout for the two Setup cards (imported by both, scoped per component). */
+.create-form {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+.create-form .grow {
+  flex: 1;
+  min-width: 200px;
+}
+.create-form .btn {
+  height: 40px;
+}
+
+.defaults-line {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.defaults-line code {
+  font-family: var(--font-mono);
+  color: var(--text);
+  background: var(--pending-tint);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.details-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.list-title {
+  margin: 18px 0 6px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+.master-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+.master-table th {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.78rem;
+  padding: 6px 10px 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.master-table td {
+  padding: 8px 10px 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.category-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.88rem;
+}
+.category-list li {
+  display: flex;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+}

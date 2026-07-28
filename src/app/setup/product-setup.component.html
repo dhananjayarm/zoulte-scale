@@ -1,0 +1,15 @@
+<div class="setup-page">
+  <header class="setup-head">
+    <h1>Products</h1>
+    <p class="section-hint">
+      Shared master data — products created here apply across the platform.
+      Need a new category first? <a routerLink="/setup/category">Manage categories</a>
+    </p>
+  </header>
+
+  @if (facade.loadError()) {
+    <div class="banner banner-error">{{ facade.loadError() }}</div>
+  }
+
+  <app-product-card />
+</div>

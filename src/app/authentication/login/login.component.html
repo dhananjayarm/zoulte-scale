@@ -1,0 +1,61 @@
+<div class="login-page">
+  <form class="login-card" [formGroup]="loginForm" (ngSubmit)="submit()">
+    <h1>Zoulte Scale</h1>
+    <p class="subtitle">{{ changeMode() ? 'Change your password' : 'Sign in to continue' }}</p>
+
+    @if (sessionExpired()) {
+      <div class="banner-info">Your session expired. Please sign in again.</div>
+    }
+    @if (changeForced()) {
+      <div class="banner-info">You must set a new password before continuing.</div>
+    }
+
+    <label class="field">
+      <span>Username</span>
+      <input type="text" formControlName="username" placeholder="Username" autocomplete="username" />
+    </label>
+
+    <label class="field">
+      <span>{{ changeMode() ? 'Current password' : 'Password' }}</span>
+      <input type="password" formControlName="password" placeholder="Password" autocomplete="current-password" />
+    </label>
+
+    @if (changeMode()) {
+      <div [formGroup]="changeForm" class="change-fields">
+        <label class="field">
+          <span>New password</span>
+          <input type="password" formControlName="newPassword" placeholder="At least 8 characters" autocomplete="new-password" />
+        </label>
+        <label class="field">
+          <span>Confirm new password</span>
+          <input type="password" formControlName="confirmPassword" placeholder="Repeat new password" autocomplete="new-password" />
+        </label>
+      </div>
+    }
+
+    @if (errorMessage()) {
+      <div class="banner-error">{{ errorMessage() }}</div>
+    }
+
+    @if (offlineUnlocked()) {
+      <div class="banner-info">No network — signed in offline. Capture only; readings will sync when the connection returns.</div>
+    }
+    @if (changeSuccess()) {
+      <div class="banner-success">Password changed — signing you in…</div>
+    }
+
+    <button type="submit" class="btn-primary" [disabled]="loginForm.invalid || isLoggingIn()">
+      @if (changeMode()) {
+        {{ isLoggingIn() ? 'Updating…' : 'Change password & sign in' }}
+      } @else {
+        {{ isLoggingIn() ? 'Signing in…' : 'Sign in' }}
+      }
+    </button>
+
+    @if (!changeForced()) {
+      <button type="button" class="btn-link change-toggle" (click)="toggleChangeMode()">
+        {{ changeMode() ? 'Back to sign in' : 'Change password' }}
+      </button>
+    }
+  </form>
+</div>

@@ -1,38 +1,50 @@
 {
-  "name": "pharma-scale-web",
+  "name": "zoulte-scale",
   "version": "0.0.0",
+  "main": "electron/main.js",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:desktop": "ng build --base-href ./",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "electron:dev": "cross-env SCALE_DEV_SERVER_URL=http://localhost:4200 electron electron/main.js",
+    "electron:start": "npm run build:desktop && electron electron/main.js",
+    "electron:validate": "electron electron/main.js --validate",
+    "test:db": "electron electron/run-in-electron.js",
+    "abi:node": "cd node_modules/better-sqlite3 && prebuild-install -r node || npm rebuild better-sqlite3",
+    "abi:electron": "cd node_modules/better-sqlite3 && prebuild-install -r electron -t 41.7.0"
   },
   "private": true,
   "dependencies": {
-    "@angular/animations": "^17.3.0",
-    "@angular/common": "^17.3.0",
-    "@angular/compiler": "^17.3.0",
-    "@angular/core": "^17.3.0",
-    "@angular/forms": "^17.3.0",
-    "@angular/platform-browser": "^17.3.0",
-    "@angular/platform-browser-dynamic": "^17.3.0",
-    "@angular/router": "^17.3.0",
+    "@angular/animations": "^21.2.18",
+    "@angular/common": "^21.2.18",
+    "@angular/compiler": "^21.2.18",
+    "@angular/core": "^21.2.18",
+    "@angular/forms": "^21.2.18",
+    "@angular/platform-browser": "^21.2.18",
+    "@angular/platform-browser-dynamic": "^21.2.18",
+    "@angular/router": "^21.2.18",
+    "better-sqlite3": "12.10.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
-    "zone.js": "~0.14.3"
+    "zone.js": "~0.16.2"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^17.3.17",
-    "@angular/cli": "^17.3.17",
-    "@angular/compiler-cli": "^17.3.0",
+    "@angular-devkit/build-angular": "^21.2.18",
+    "@angular/cli": "^21.2.18",
+    "@angular/compiler-cli": "^21.2.18",
     "@types/jasmine": "~5.1.0",
+    "@types/w3c-web-serial": "^1.0.8",
+    "cross-env": "10.1.0",
+    "electron": "41.7.0",
     "jasmine-core": "~5.1.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
-    "typescript": "~5.4.2"
+    "typescript": "~5.9.2"
   }
 }

@@ -1,1 +1,210 @@
-/* You can add global styles to this file, and also import other style files */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Theme tokens — default (and body.theme-blue) match this app's existing blue
+   accent; body.theme-orange mirrors xaur-hr-ui's default palette. Switch by
+   adding/removing the "theme-orange" class on <body>. */
+body,
+body.theme-blue {
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-tint: #eff6ff;
+  --sidebar-bg: #0f1e2e;
+  --sidebar-text: rgba(255, 255, 255, 0.85);
+  --sidebar-text-active: #ffffff;
+  --bg: #f4f6f9;
+  --border: #e5e7eb;
+  --text: #1f2937;
+  --muted: #6b7280;
+}
+
+body.theme-orange {
+  --accent: #c2410c;
+  --accent-hover: #9a3412;
+  --accent-tint: #fff7ed;
+  --sidebar-bg: #141414;
+  --sidebar-text: rgba(255, 255, 255, 0.85);
+  --sidebar-text-active: #ffffff;
+  --bg: #f7f7f5;
+  --border: #e8e8e4;
+  --text: #1a1a1a;
+  --muted: #7a7a78;
+}
+
+/* Theme-independent tokens: status colors (sync/stability/verification states),
+   surfaces, and shape. Status meanings are fixed across both themes so a green
+   "synced" badge never shifts hue when the theme changes. */
+body {
+  --success: #16a34a;
+  --success-tint: #f0fdf4;
+  --warn: #d97706;
+  --warn-tint: #fffbeb;
+  --danger: #dc2626;
+  --danger-tint: #fef2f2;
+  --pending: #6b7280;
+  --pending-tint: #f3f4f6;
+
+  --surface: #ffffff;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+
+  /* DM Sans/Mono are bundled TTFs (assets/fonts) — the station must render
+     identically with zero network. Mono carries the figures: weights, times,
+     counts all align digit-for-digit. */
+  --font-ui: 'DM Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'DM Mono', Consolas, 'Courier New', monospace;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.01em;
+}
+
+/* Status chip — the one shape used for sync / scale / verification states
+   everywhere (header widgets, reading rows, report cells). */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.chip--success { background: var(--success-tint); color: var(--success); }
+.chip--warn    { background: var(--warn-tint);    color: var(--warn); }
+.chip--danger  { background: var(--danger-tint);  color: var(--danger); }
+.chip--pending { background: var(--pending-tint); color: var(--pending); }
+
+.chip__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Base UI primitives shared by all screens (weighing keeps equivalent local
+   copies from its redesign — identical values, no conflict). */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+.card h2 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+}
+
+.section-hint {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.field select,
+.field input {
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.92rem;
+  color: var(--text);
+  background: var(--surface);
+}
+.field select:focus,
+.field input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+.btn {
+  padding: 9px 18px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+.btn-link {
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.banner {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  margin-top: 12px;
+}
+.banner-error {
+  background: var(--danger-tint);
+  color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 25%, transparent);
+}
+.banner-warn {
+  background: var(--warn-tint);
+  color: var(--warn);
+  border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent);
+}
+.banner-success {
+  background: var(--success-tint);
+  color: var(--success);
+  border: 1px solid color-mix(in srgb, var(--success) 25%, transparent);
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.empty-state {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin: 10px 0 2px;
+}

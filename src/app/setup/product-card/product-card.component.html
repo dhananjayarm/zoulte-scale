@@ -1,0 +1,88 @@
+<div class="card">
+  <h2>Products</h2>
+  <p class="section-hint">Name + category is all a product needs — codes and units are filled in for you.</p>
+
+  @if (!hasCategories()) {
+    <div class="banner banner-warn">Create a category first — every product belongs to one.</div>
+  }
+
+  <form class="create-form" [formGroup]="form" (ngSubmit)="save()">
+    <label class="field grow">
+      <span>Product name</span>
+      <input type="text" formControlName="materialName" placeholder="e.g. Paracetamol 500mg" />
+    </label>
+
+    <label class="field">
+      <span>Category</span>
+      <select formControlName="materialCategoryCode">
+        <option value="" disabled>Select…</option>
+        @for (cat of facade.categories(); track cat.categoryCode) {
+          <option [value]="cat.categoryCode">{{ cat.categoryName || cat.categoryCode }}</option>
+        }
+      </select>
+    </label>
+
+    <button type="submit" class="btn btn-primary" [disabled]="saving() || !hasCategories()">
+      {{ saving() ? 'Saving…' : 'Add product' }}
+    </button>
+  </form>
+
+  <p class="defaults-line">
+    unit {{ form.controls.defaultUom.value || facade.defaultUom() || '—' }}
+    · type {{ form.controls.invTypeCode.value || facade.defaultInvType() || '—' }}
+    <button type="button" class="btn-link" (click)="showDetails.set(!showDetails())">
+      {{ showDetails() ? 'hide' : 'change' }}
+    </button>
+  </p>
+
+  @if (showDetails()) {
+    <div class="details-row" [formGroup]="form">
+      <label class="field">
+        <span>Unit</span>
+        <select formControlName="defaultUom">
+          <option value="">{{ facade.defaultUom() || 'auto' }} (default)</option>
+          @for (uom of facade.uoms(); track uom.uomCode) {
+            <option [value]="uom.uomCode">{{ uom.uomName || uom.uomCode }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span>Inventory type</span>
+        <select formControlName="invTypeCode">
+          <option value="">{{ facade.defaultInvType() || 'auto' }} (default)</option>
+          @for (type of facade.invTypes(); track type.invTypeCode) {
+            <option [value]="type.invTypeCode">{{ type.description || type.invTypeCode }}</option>
+          }
+        </select>
+      </label>
+    </div>
+  }
+
+  @if (savedName(); as name) {
+    <div class="banner banner-success">“{{ name }}” added.</div>
+  }
+  @if (error()) {
+    <div class="banner banner-error">{{ error() }}</div>
+  }
+
+  <h3 class="list-title">Existing ({{ facade.products().length }})</h3>
+  @if (facade.products().length) {
+    <div class="table-scroll">
+      <table class="master-table">
+        <thead>
+          <tr><th>Name</th><th>Category</th></tr>
+        </thead>
+        <tbody>
+          @for (product of facade.products(); track product.materialCode) {
+            <tr>
+              <td>{{ product.materialName }}</td>
+              <td>{{ categoryName(product.materialCategoryCode) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <p class="empty-state">No products yet.</p>
+  }
+</div>

@@ -1,8 +1,6 @@
 <div class="card">
-  <h2>Products</h2>
-  <p class="section-hint">Name + category is all a product needs — codes and units are filled in for you.</p>
-
-  @if (!hasCategories()) {
+  <!-- No heading here: the page already says "Products". -->
+  @if (!hasCategories() && !facade.isLoading()) {
     <div class="banner banner-warn">Create a category first — every product belongs to one.</div>
   }
 
@@ -27,9 +25,9 @@
     </button>
   </form>
 
+  <!-- Readable names, not uomCode/invTypeCode — the operator shouldn't have to know "GMS". -->
   <p class="defaults-line">
-    unit {{ form.controls.defaultUom.value || facade.defaultUom() || '—' }}
-    · type {{ form.controls.invTypeCode.value || facade.defaultInvType() || '—' }}
+    unit {{ uomLabel() }} · type {{ invTypeLabel() }}
     <button type="button" class="btn-link" (click)="showDetails.set(!showDetails())">
       {{ showDetails() ? 'hide' : 'change' }}
     </button>
@@ -65,6 +63,7 @@
     <div class="banner banner-error">{{ error() }}</div>
   }
 
+  <div class="list-section">
   <div class="list-title-row">
     <h3 class="list-title">Existing ({{ filteredProducts().length }})</h3>
     <div class="list-title-controls">
@@ -92,11 +91,28 @@
       </label>
     </div>
   </div>
-  @if (pagedProducts().length) {
+  @if (facade.isLoading()) {
+    <div class="empty-state">
+      <div class="empty-state-icon spinner"></div>
+      <h3 class="empty-state-title">Loading…</h3>
+      <p class="empty-state-text">Fetching products from the server.</p>
+    </div>
+  } @else if (pagedProducts().length) {
     <div class="table-scroll">
       <table class="master-table">
         <thead>
-          <tr><th>Name</th><th>Category</th></tr>
+          <tr>
+            @for (column of columns; track column.key) {
+              <th [attr.aria-sort]="ariaSort(column.key)">
+                <button type="button" class="sort-header" (click)="sortBy(column.key)">
+                  {{ column.label }}
+                  <span class="sort-arrow" [class.sort-arrow--active]="sortKey() === column.key">
+                    {{ sortArrow(column.key) }}
+                  </span>
+                </button>
+              </th>
+            }
+          </tr>
         </thead>
         <tbody>
           @for (product of pagedProducts(); track product.materialCode) {
@@ -124,8 +140,29 @@
       </div>
     }
   } @else if (searchTerm().trim()) {
-    <p class="empty-state">No products match “{{ searchTerm() }}”.</p>
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </div>
+      <h3 class="empty-state-title">No matches</h3>
+      <p class="empty-state-text">Nothing here matches “{{ searchTerm() }}”.</p>
+    </div>
   } @else {
-    <p class="empty-state">No products yet.</p>
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 8v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8"></path>
+          <path d="M21 8l-3-5H6L3 8"></path>
+          <path d="M3 8h18"></path>
+          <path d="M9 12h6"></path>
+        </svg>
+      </div>
+      <h3 class="empty-state-title">No products yet</h3>
+      <p class="empty-state-text">Add your first one above — a name and a category are all it needs.</p>
+    </div>
   }
+  </div>
 </div>

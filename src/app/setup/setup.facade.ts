@@ -30,6 +30,34 @@ export class SetupFacade {
   readonly invTypes = this._invTypes.asReadonly();
   readonly loadError = signal<string | null>(null);
 
+  // Starts true: the cards must not claim "no products yet" before the first
+  // response lands — on a master-data screen that reads as data loss.
+  private readonly _isLoading = signal(true);
+  readonly isLoading = this._isLoading.asReadonly();
+
+  /** Readable name for the default unit — operators shouldn't have to know "GMS". */
+  readonly defaultUomLabel = computed(() => {
+    const code = this.defaultUom();
+    return this._uoms().find((u) => u.uomCode === code)?.uomName || code;
+  });
+
+  readonly defaultInvTypeLabel = computed(() => {
+    const code = this.defaultInvType();
+    return this._invTypes().find((t) => t.invTypeCode === code)?.description || code;
+  });
+
+  /** How many products sit in each category — the number that makes the list useful. */
+  readonly productCountByCategory = computed(() => {
+    const counts = new Map<string, number>();
+    for (const product of this._products()) {
+      const code = product.materialCategoryCode;
+      if (code) {
+        counts.set(code, (counts.get(code) ?? 0) + 1);
+      }
+    }
+    return counts;
+  });
+
   /** Pharma default: gram-family unit if the tenant has one, else first UOM. */
   readonly defaultUom = computed(() => {
     const uoms = this._uoms();
@@ -62,6 +90,7 @@ export class SetupFacade {
         this._products.set(products ?? []);
         this._uoms.set(uoms ?? []);
         this._invTypes.set(invTypes ?? []);
+        this._isLoading.set(false);
       });
   }
 

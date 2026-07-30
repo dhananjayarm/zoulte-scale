@@ -11,40 +11,10 @@
     <div class="banner banner-error">{{ actionError() }}</div>
   }
 
-  <section class="card filter-card">
-    <div class="filter-form">
-      <label class="field">
-        <span>Product</span>
-        <select [ngModel]="filterProduct()" (ngModelChange)="onFilterChange(filterProduct, $event)">
-          <option value="">All</option>
-          @for (product of products(); track product.materialCode) {
-            <option [value]="product.materialName">{{ product.materialName }}</option>
-          }
-        </select>
-      </label>
-      <label class="field">
-        <span>Manufacture Date</span>
-        <input type="date" [ngModel]="filterManufactureDate()" (ngModelChange)="onFilterChange(filterManufactureDate, $event)" />
-      </label>
-      <label class="field">
-        <span>Expiry Date</span>
-        <input type="date" [ngModel]="filterExpiryDate()" (ngModelChange)="onFilterChange(filterExpiryDate, $event)" />
-      </label>
-      <label class="field">
-        <span>Status</span>
-        <select [ngModel]="filterStatus()" (ngModelChange)="onFilterChange(filterStatus, $event)">
-          <option value="">All</option>
-          <option value="NEW">New</option>
-          <option value="APPROVED">Approved</option>
-          <option value="REJECTED">Rejected</option>
-        </select>
-      </label>
-      <button type="button" class="btn" (click)="clearFilters()">Clear</button>
-    </div>
-  </section>
-
   <section class="card">
-    @if (isLoading()) {
+    <!-- Only the very first fetch takes over the card; later reloads keep the
+         controls on screen so the window can be changed again mid-flight. -->
+    @if (isLoading() && !items().length) {
       <div class="empty-state">
         <div class="empty-state-icon spinner"></div>
         <h3 class="empty-state-title">Loading…</h3>
@@ -52,6 +22,61 @@
       </div>
     } @else {
       <div class="list-title-row">
+        <div class="load-window">
+          <span class="load-window-label">Showing</span>
+          <label class="load-field">
+            <span>Status</span>
+            <select
+              [ngModel]="statusFilter()"
+              (ngModelChange)="onStatusFilterChange($event)"
+              [ngModelOptions]="{ standalone: true }"
+              aria-label="Status to load"
+            >
+              @for (option of statusOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </label>
+          <label class="load-field">
+            <span>Dates</span>
+            <select
+              [ngModel]="dateWindow()"
+              (ngModelChange)="onDateWindowChange($event)"
+              [ngModelOptions]="{ standalone: true }"
+              aria-label="Date window to load"
+            >
+              @for (option of dateWindowOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </label>
+          @if (dateWindow() === 'CUSTOM') {
+            <label class="load-field">
+              <span>From</span>
+              <input
+                type="date"
+                [ngModel]="customFrom()"
+                (ngModelChange)="onCustomDateChange(customFrom, $event)"
+                [ngModelOptions]="{ standalone: true }"
+                aria-label="Range start"
+              />
+            </label>
+            <label class="load-field">
+              <span>To</span>
+              <input
+                type="date"
+                [ngModel]="customTo()"
+                (ngModelChange)="onCustomDateChange(customTo, $event)"
+                [ngModelOptions]="{ standalone: true }"
+                aria-label="Range end"
+              />
+            </label>
+          }
+          <span class="load-summary">{{ loadSummary() }}</span>
+          @if (isLoading()) {
+            <span class="load-summary">refreshing…</span>
+          }
+        </div>
         <div class="list-title-controls">
           <input
             type="search"
@@ -77,34 +102,100 @@
           </label>
         </div>
       </div>
-      @if (pagedItems().length) {
+      <!-- Gated on the loaded list, not the filtered one: the filter row lives in the
+           table, so hiding the table on a zero-match filter would strand the reviewer
+           with no way to undo it. A narrowed load window keeps the table for the same
+           reason — an empty result there means "widen me", not "nothing exists". -->
+      @if (items().length || !hasDefaultWindow()) {
       <div class="table-scroll">
         <table class="master-table">
           <thead>
             <tr>
-              <th>Product Name</th>
-              <th>Batch No</th>
-              <th>Date Code</th>
-              <th>Manufacturer</th>
-              <th>Mfg Date</th>
-              <th>Expiry Date</th>
-              <th>Weight</th>
-              <th>Active</th>
-              <th>Status</th>
-              <th>Action</th>
+              @for (column of columns; track column.key) {
+                <th [attr.aria-sort]="ariaSort(column.key)">
+                  <button type="button" class="sort-header" (click)="sortBy(column.key)">
+                    {{ column.label }}
+                    <span class="sort-arrow" [class.sort-arrow--active]="sortKey() === column.key">
+                      {{ sortArrow(column.key) }}
+                    </span>
+                  </button>
+                </th>
+              }
+              <th class="action-header">Action</th>
+            </tr>
+            <!-- Cells line up with the header above: Date · Time · Product · Weight ·
+                 Batch · Mfd · Expiry · Manufacturer · Status · Action. Date, Time and
+                 Status are load-window controls (the strip above), so those cells are
+                 deliberately empty. -->
+            <tr class="filter-row">
+              <td class="filter-row-label">Filter</td>
+              <td></td>
+              <td>
+                <select
+                  [ngModel]="filterProduct()"
+                  (ngModelChange)="onFilterChange(filterProduct, $event)"
+                  aria-label="Filter by product"
+                >
+                  <option value="">All</option>
+                  @for (product of products(); track product.materialCode) {
+                    <option [value]="product.materialName">{{ product.materialName }}</option>
+                  }
+                </select>
+              </td>
+              <td></td>
+              <td>
+                <input
+                  type="text"
+                  placeholder="contains…"
+                  [ngModel]="filterBatch()"
+                  (ngModelChange)="onFilterChange(filterBatch, $event)"
+                  aria-label="Filter by batch number"
+                />
+              </td>
+              <td>
+                <input
+                  type="date"
+                  [ngModel]="filterManufactureDate()"
+                  (ngModelChange)="onFilterChange(filterManufactureDate, $event)"
+                  aria-label="Filter by manufacture date"
+                />
+              </td>
+              <td>
+                <input
+                  type="date"
+                  [ngModel]="filterExpiryDate()"
+                  (ngModelChange)="onFilterChange(filterExpiryDate, $event)"
+                  aria-label="Filter by expiry date"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  placeholder="contains…"
+                  [ngModel]="filterManufacturer()"
+                  (ngModelChange)="onFilterChange(filterManufacturer, $event)"
+                  aria-label="Filter by manufacturer"
+                />
+              </td>
+              <td></td>
+              <td class="filter-clear-cell">
+                @if (hasActiveFilters()) {
+                  <button type="button" class="btn-link" (click)="clearFilters()">Clear</button>
+                }
+              </td>
             </tr>
           </thead>
           <tbody>
             @for (item of pagedItems(); track item.id) {
               <tr>
+                <td class="capture-date">{{ item.createddate | date: 'yyyy-MM-dd' }}</td>
+                <td class="capture-time">{{ item.createddate | date: 'HH:mm:ss' }}</td>
                 <td>{{ item.productName }}</td>
+                <td class="capture-weight">{{ item.netWeight }} {{ unitSymbol(item.unitWeight) }}</td>
                 <td>{{ item.batchNo }}</td>
-                <td>{{ item.dateCode }}</td>
-                <td>{{ item.manufacturerName }}</td>
                 <td>{{ item.manufacturingDate | date: 'yyyy-MM-dd' }}</td>
                 <td>{{ item.expiryDate | date: 'yyyy-MM-dd' }}</td>
-                <td>{{ item.netWeight }} {{ item.unitWeight }}</td>
-                <td>{{ item.isActive ? 'Yes' : 'No' }}</td>
+                <td>{{ item.manufacturerName }}</td>
                 <td>
                   <span
                     class="status-chip"
@@ -147,6 +238,12 @@
                   }
                 </td>
               </tr>
+            } @empty {
+              <tr>
+                <td class="no-match" [attr.colspan]="columns.length + 1">
+                  No records for {{ loadSummary() }} match the current filters.
+                </td>
+              </tr>
             }
           </tbody>
         </table>
@@ -166,9 +263,8 @@
           <button type="button" class="btn btn-ghost btn-sm" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">Next</button>
         </div>
       }
-      } @else if (searchTerm().trim()) {
-        <p class="empty-state-text">No records match “{{ searchTerm() }}”.</p>
       } @else {
+        <!-- Nothing loaded at all — a filter that matches nothing is handled inside the table. -->
         <div class="empty-state">
           <div class="empty-state-icon">
             <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -179,7 +275,7 @@
             </svg>
           </div>
           <h3 class="empty-state-title">No records to verify</h3>
-          <p class="empty-state-text">Nothing matches the current filters, or all captures have already been reviewed.</p>
+          <p class="empty-state-text">Nothing has been captured yet, or every capture has already been reviewed.</p>
         </div>
       }
     }

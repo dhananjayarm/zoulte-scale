@@ -57,6 +57,14 @@ body {
      (weighing, verification, setup, reports) — change once, applies everywhere. */
   --page-padding-x: 24px;
 
+  /* Field rows top-align, so a validation message can grow under one field
+     without shifting its neighbours. These two keep the row looking level:
+     every control is the same height, and a bare button in a field row drops
+     by the label block (label line-height + .field gap) to sit on the same
+     line as the inputs beside it. */
+  --control-height: 40px;
+  --field-label-offset: 22px;
+
   /* DM Sans/Mono are bundled TTFs (assets/fonts) — the station must render
      identically with zero network. Mono carries the figures: weights, times,
      counts all align digit-for-digit. */
@@ -135,6 +143,14 @@ h3 {
   gap: 5px;
   font-size: 0.82rem;
   color: var(--muted);
+}
+.field > span {
+  line-height: 17px;
+}
+/* One height for every control so a row of text/date/select fields sits level. */
+.field select,
+.field input:not([type='checkbox']):not([type='radio']) {
+  height: var(--control-height);
 }
 .field select,
 .field input {

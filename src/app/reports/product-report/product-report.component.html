@@ -37,6 +37,7 @@
 
   <section class="card filter-card">
     <form class="filter-form" [formGroup]="filterForm" (ngSubmit)="search()">
+      <span class="filter-label">Report</span>
       <label class="field">
         <span>From Date</span>
         <input type="date" formControlName="fromDt" />
@@ -49,13 +50,24 @@
         <span>Product</span>
         <select formControlName="productCode">
           <option value="">All</option>
+          <!-- Sends the NAME: ws rows carry a generated "WSP…" product_code of their own,
+               so the server matches this param against product_name (see
+               WeightScaleProductReportsService.withProductCode). -->
           @for (product of products(); track product.materialCode) {
-            <option [value]="product.materialCode">{{ product.materialName }}</option>
+            <option [value]="product.materialName">{{ product.materialName }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span>Status</span>
+        <select formControlName="status">
+          @for (option of statusOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
           }
         </select>
       </label>
       <button type="submit" class="btn btn-primary" [disabled]="isLoading()">
-        {{ isLoading() ? 'Searching…' : 'Search' }}
+        {{ isLoading() ? 'Submitting…' : 'Submit' }}
       </button>
     </form>
     @if (filterForm.invalid && (filterForm.get('fromDt')?.touched || filterForm.get('toDt')?.touched)) {
@@ -76,8 +88,8 @@
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
         </div>
-        <h3 class="empty-state-title">Search for a report</h3>
-        <p class="empty-state-text">Select a date range and click Search to view product details.</p>
+        <h3 class="empty-state-title">Run a report</h3>
+        <p class="empty-state-text">Select a date range and click Submit to view product details.</p>
       </div>
     } @else if (rows().length) {
       <div class="list-title-row">
@@ -111,23 +123,30 @@
           <table class="report-table">
             <thead>
               <tr>
-                <th>Product</th>
-                <th>Batch</th>
-                <th>Manufacturer</th>
-                <th>Mfg Date</th>
-                <th>Expiry Date</th>
-                <th>Weight</th>
+                @for (column of columns; track column.key) {
+                  <th [attr.aria-sort]="ariaSort(column.key)">
+                    <button type="button" class="sort-header" (click)="sortBy(column.key)">
+                      {{ column.label }}
+                      <span class="sort-arrow" [class.sort-arrow--active]="sortKey() === column.key">
+                        {{ sortArrow(column.key) }}
+                      </span>
+                    </button>
+                  </th>
+                }
               </tr>
             </thead>
             <tbody>
               @for (row of pagedRows(); track row.id) {
                 <tr>
+                  <td class="capture-date">{{ row.createddate | date: 'yyyy-MM-dd' }}</td>
+                  <td class="capture-time">{{ row.createddate | date: 'HH:mm:ss' }}</td>
                   <td>{{ row.productName }}</td>
+                  <td class="capture-weight">{{ row.netWeight }} {{ unitSymbol(row.unitWeight) }}</td>
                   <td>{{ row.batchNo }}</td>
-                  <td>{{ row.manufacturerName }}</td>
                   <td>{{ row.manufacturingDate | date: 'yyyy-MM-dd' }}</td>
                   <td>{{ row.expiryDate | date: 'yyyy-MM-dd' }}</td>
-                  <td>{{ row.netWeight }} {{ row.unitWeight }}</td>
+                  <td>{{ row.manufacturerName }}</td>
+                  <td>{{ row.status }}</td>
                 </tr>
               }
             </tbody>

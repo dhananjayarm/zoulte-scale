@@ -1,7 +1,7 @@
 .user-form {
   display: flex;
   gap: 12px;
-  align-items: end;
+  align-items: flex-start;
   flex-wrap: wrap;
 }
 .user-form .grow {
@@ -9,7 +9,8 @@
   min-width: 200px;
 }
 .user-form .btn {
-  height: 40px;
+  height: var(--control-height);
+  margin-top: var(--field-label-offset);
 }
 .required-mark {
   color: #d33;
@@ -28,6 +29,7 @@
 .readonly-chip {
   display: inline-flex;
   align-items: center;
+  height: var(--control-height);
   padding: 9px 12px;
   border-radius: var(--radius-sm);
   background: var(--bg);
@@ -46,6 +48,7 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  height: var(--control-height);
   padding: 9px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);

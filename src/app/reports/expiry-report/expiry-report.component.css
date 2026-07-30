@@ -113,19 +113,60 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
+/* Same tinted band as the verification load window: this filter costs a round-trip and
+   decides the whole report, so it should read as the primary control on the page. */
 .filter-form {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 16px;
   flex-wrap: wrap;
+  padding: 14px 16px;
+  background: var(--accent-tint);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  border-radius: var(--radius);
+}
+.filter-form .btn {
+  height: var(--control-height);
+  margin-top: var(--field-label-offset);
+}
+.filter-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin-top: var(--field-label-offset);
+  line-height: var(--control-height);
+}
+.filter-form .field input,
+.filter-form .field select {
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+/* Dates are figures. Mono + tabular gives them the same instrument feel as the scale
+   readout and the table's Date/Time columns, instead of flat default UI sans. */
+.filter-form .field input[type='date'] {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+.filter-form .field > span {
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   font-size: 0.85rem;
   color: var(--text);
+}
+
+.field > span {
+  line-height: 17px;
 }
 
 .field input {
@@ -303,11 +344,53 @@
   white-space: nowrap;
 }
 
+/* Tinted band so the sortable header reads as a control strip, not a first row. */
 .report-table th {
-  color: var(--muted);
+  color: var(--text);
+  background: var(--pending-tint);
   font-weight: 600;
   font-size: 0.8rem;
   text-transform: uppercase;
+  /* The sort button carries the padding so the whole header cell is clickable. */
+  padding: 0;
+}
+.report-table th.status-header {
+  padding: 9px 10px;
+}
+.sort-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.sort-header:hover {
+  color: var(--accent);
+}
+/* Dimmed on every column as an affordance; solid on the one in force. */
+.sort-arrow {
+  font-size: 0.65rem;
+  opacity: 0.25;
+}
+.sort-arrow--active {
+  opacity: 1;
+  color: var(--accent);
+}
+/* Capture stamp and weight are figures — mono keeps them aligned digit-for-digit. */
+.capture-date,
+.capture-time,
+.capture-weight {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.capture-time {
+  color: var(--muted);
 }
 
 .report-table tbody tr:hover {

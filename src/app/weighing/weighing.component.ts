@@ -11,23 +11,9 @@ import {
 import { ScaleSerialService } from '../services/scale-serial.service';
 import { ReadingStore, type StoredReading } from '../services/readings/reading-store';
 import { MaterialApiService, type ProductRow } from '../services/masters/material-api.service';
+import { toUnitSymbol, toUnitWeight } from '../services/data/units';
 
 const BAUD_RATES = [1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200];
-
-const UNIT_WEIGHT_MAP: Record<string, string> = {
-  g: 'GRAM',
-  kg: 'KILOGRAM',
-  mg: 'MILLIGRAM',
-  lb: 'POUND',
-  oz: 'OUNCE',
-};
-
-function toUnitWeight(unit: string | null): string {
-  if (!unit) {
-    return 'GRAM';
-  }
-  return UNIT_WEIGHT_MAP[unit.toLowerCase()] ?? unit.toUpperCase();
-}
 
 function expiryAfterManufactureValidator(group: AbstractControl): ValidationErrors | null {
   const manufactureDate = group.get('manufactureDate')?.value;
@@ -36,6 +22,41 @@ function expiryAfterManufactureValidator(group: AbstractControl): ValidationErro
     return null;
   }
   return new Date(expiryDate) > new Date(manufactureDate) ? null : { expiryBeforeManufacture: true };
+}
+
+/** Columns the Recent Captures table can be sorted by. */
+type CaptureSortKey = 'product' | 'batch' | 'weight' | 'time' | 'status';
+
+const CAPTURE_COLUMNS: ReadonlyArray<{ key: CaptureSortKey; label: string }> = [
+  { key: 'product', label: 'Product' },
+  { key: 'batch', label: 'Batch' },
+  { key: 'weight', label: 'Weight' },
+  { key: 'time', label: 'Time' },
+  { key: 'status', label: 'Status' },
+];
+
+function compareCaptures(a: StoredReading, b: StoredReading, key: CaptureSortKey): number {
+  switch (key) {
+    case 'product':
+      return a.productName.localeCompare(b.productName);
+    case 'batch':
+      return a.batchNumber.localeCompare(b.batchNumber);
+    case 'weight':
+      return a.weight - b.weight;
+    case 'time':
+      return toTimestamp(a.capturedAt) - toTimestamp(b.capturedAt);
+    case 'status':
+      return a.syncStatus.localeCompare(b.syncStatus);
+  }
+}
+
+/** Captures with no resolvable timestamp sort oldest, so they never lead the list. */
+function toTimestamp(capturedAt: string | number | null): number {
+  if (capturedAt == null) {
+    return 0;
+  }
+  const ms = typeof capturedAt === 'number' ? capturedAt : Date.parse(capturedAt);
+  return Number.isNaN(ms) ? 0 : ms;
 }
 
 /** The product/batch context all captures in a session are recorded against. */
@@ -106,7 +127,22 @@ export class WeighingComponent implements OnInit {
     );
   });
 
-  readonly capturePageSize = signal(10);
+  readonly captureColumns = CAPTURE_COLUMNS;
+  readonly captureSortKey = signal<CaptureSortKey>('time');
+  readonly captureSortDir = signal<'asc' | 'desc'>('desc');
+
+  /**
+   * Sorting happens before paging, so the order runs across every capture rather
+   * than shuffling the ten rows that happen to be on screen. It also gives the
+   * browser store its ordering — that one returns rows in server order.
+   */
+  readonly sortedCaptures = computed(() => {
+    const key = this.captureSortKey();
+    const direction = this.captureSortDir() === 'asc' ? 1 : -1;
+    return [...this.filteredCaptures()].sort((a, b) => direction * compareCaptures(a, b, key));
+  });
+
+  readonly capturePageSize = signal(12);
   readonly captureCurrentPage = signal(1);
   readonly captureTotalPages = computed(() =>
     Math.max(1, Math.ceil(this.filteredCaptures().length / this.capturePageSize())),
@@ -115,8 +151,35 @@ export class WeighingComponent implements OnInit {
     const page = Math.min(this.captureCurrentPage(), this.captureTotalPages());
     const size = this.capturePageSize();
     const start = (page - 1) * size;
-    return this.filteredCaptures().slice(start, start + size);
+    return this.sortedCaptures().slice(start, start + size);
   });
+
+  /** Clicking the active column flips direction; a new column opens on its most useful end. */
+  sortCaptures(key: CaptureSortKey): void {
+    if (this.captureSortKey() === key) {
+      this.captureSortDir.update((dir) => (dir === 'asc' ? 'desc' : 'asc'));
+    } else {
+      this.captureSortKey.set(key);
+      // Newest and heaviest first read better than the reverse; names read A→Z.
+      this.captureSortDir.set(key === 'time' || key === 'weight' ? 'desc' : 'asc');
+    }
+    this.captureCurrentPage.set(1);
+  }
+
+  captureSortArrow(key: CaptureSortKey): string {
+    return this.captureSortKey() === key && this.captureSortDir() === 'asc' ? '▲' : '▼';
+  }
+
+  captureAriaSort(key: CaptureSortKey): 'ascending' | 'descending' | 'none' {
+    if (this.captureSortKey() !== key) {
+      return 'none';
+    }
+    return this.captureSortDir() === 'asc' ? 'ascending' : 'descending';
+  }
+
+  unitSymbol(unitWeight: string): string {
+    return toUnitSymbol(unitWeight);
+  }
 
   onCaptureSearchChange(term: string): void {
     this.captureSearchTerm.set(term);

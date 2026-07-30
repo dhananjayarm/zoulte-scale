@@ -7,26 +7,64 @@
   font-size: 1.35rem;
 }
 
-.filter-card {
-  margin-bottom: 16px;
-}
-.filter-form {
-  display: flex;
-  gap: 12px;
-  align-items: end;
-  flex-wrap: wrap;
-}
-.filter-form .btn {
-  height: 40px;
-}
-
 .list-title-row {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 12px;
   margin: 0 0 12px;
   flex-wrap: wrap;
+}
+
+/* Load window — what gets fetched, as opposed to the in-table refinements. Given a
+   tinted band of its own because changing it costs a round-trip: it should never be
+   mistaken for one of the instant column filters below. */
+.load-window {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: var(--accent-tint);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  border-radius: var(--radius);
+}
+.load-window-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.load-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.load-field select,
+.load-field input {
+  height: 36px;
+  padding: 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+.load-field select:focus,
+.load-field input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+.load-summary {
+  color: var(--muted);
+  font-size: 0.78rem;
 }
 .list-title-controls {
   display: flex;
@@ -127,19 +165,116 @@
   border-collapse: collapse;
   font-size: 0.88rem;
 }
+/* Tinted band so the sortable header reads as a control strip, not a first row. */
 .master-table th {
   text-align: left;
-  color: var(--muted);
+  color: var(--text);
+  background: var(--pending-tint);
   font-weight: 600;
   font-size: 0.78rem;
-  padding: 6px 10px 6px 0;
+  letter-spacing: 0.02em;
+  /* The sort button carries the padding so the whole header cell is clickable. */
+  padding: 0;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
+/* The one non-sortable column has no button, so it carries its own padding. */
+.master-table th.action-header {
+  padding: 9px 10px;
+}
+.sort-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.sort-header:hover {
+  color: var(--accent);
+}
+/* Dimmed on every column as an affordance; solid on the one in force. */
+.sort-arrow {
+  font-size: 0.65rem;
+  opacity: 0.25;
+}
+.sort-arrow--active {
+  opacity: 1;
+  color: var(--accent);
+}
+/* Matches the header button's 10px inset so labels sit over their column. */
 .master-table td {
-  padding: 8px 10px 8px 0;
+  padding: 8px 10px;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
+}
+
+/* Filter controls sit in the header band, directly under the column they act on. */
+.filter-row td {
+  background: var(--pending-tint);
+  padding: 4px 10px 10px;
+  border-bottom: 2px solid var(--border);
+}
+/* Names the row, so an empty cell reads as "no filter here" rather than a blank record. */
+.filter-row-label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.filter-row input,
+.filter-row select {
+  width: 100%;
+  min-width: 110px;
+  height: 34px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.8rem;
+}
+/* Native date inputs clip their own dd-mm-yyyy text below this. */
+.filter-row input[type='date'] {
+  min-width: 140px;
+}
+.filter-row input:focus,
+.filter-row select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+.filter-row input::placeholder {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.filter-clear-cell {
+  text-align: right;
+}
+
+/* Capture stamp and weight are figures — mono keeps them aligned digit-for-digit. */
+.capture-date,
+.capture-time,
+.capture-weight {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.capture-time {
+  color: var(--muted);
+}
+
+.master-table td.no-match {
+  padding: 24px 10px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.88rem;
 }
 .master-table tbody tr:hover {
   background: #f9fafb;

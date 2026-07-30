@@ -145,7 +145,7 @@
   <!-- ═══ Recent captures — confirmation, not history ═══ -->
   <section class="card recent-card">
     <div class="recent-head">
-      <h2>Recent captures</h2>
+      <h2>Recent Captures</h2>
       <span class="recent-note">Older history and exports live in Reports</span>
     </div>
 
@@ -172,7 +172,7 @@
             [ngModelOptions]="{ standalone: true }"
             aria-label="Rows per page"
           >
-            <option [ngValue]="10">10</option>
+            <option [ngValue]="12">12</option>
             <option [ngValue]="25">25</option>
             <option [ngValue]="50">50</option>
           </select>
@@ -185,17 +185,24 @@
         <table class="recent-table">
           <thead>
             <tr>
-              <th>Product / Batch</th>
-              <th>Weight</th>
-              <th>Time</th>
-              <th>Status</th>
+              @for (column of captureColumns; track column.key) {
+                <th [attr.aria-sort]="captureAriaSort(column.key)">
+                  <button type="button" class="sort-header" (click)="sortCaptures(column.key)">
+                    {{ column.label }}
+                    <span class="sort-arrow" [class.sort-arrow--active]="captureSortKey() === column.key">
+                      {{ captureSortArrow(column.key) }}
+                    </span>
+                  </button>
+                </th>
+              }
             </tr>
           </thead>
           <tbody>
             @for (reading of recentCaptures(); track reading.uuid) {
               <tr>
-                <td>{{ reading.productName }} · {{ reading.batchNumber }}</td>
-                <td class="recent-weight">{{ reading.weight }} <small>{{ reading.unit }}</small></td>
+                <td>{{ reading.productName }}</td>
+                <td class="recent-batch">{{ reading.batchNumber }}</td>
+                <td class="recent-weight">{{ reading.weight }} <small>{{ unitSymbol(reading.unit) }}</small></td>
                 <td class="recent-time">{{ reading.capturedAt | date: 'HH:mm:ss' }}</td>
                 <td>
                   @if (reading.syncStatus === 'SYNCED') {

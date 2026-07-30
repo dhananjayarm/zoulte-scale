@@ -1,7 +1,5 @@
 <div class="card">
-  <h2>Categories</h2>
-  <p class="section-hint">One per product family is plenty — most sites need only a handful.</p>
-
+  <!-- No heading here: the page already says "Categories". -->
   <form class="create-form" [formGroup]="form" (ngSubmit)="save()">
     <label class="field grow">
       <span>Category name</span>
@@ -12,9 +10,10 @@
     </button>
   </form>
 
-  @if (form.controls.categoryName.value.trim()) {
+  <!-- Readable names, not uomCode/invTypeCode — shown once there's a name to apply them to. -->
+  @if (isNamed()) {
     <p class="defaults-line">
-      unit {{ facade.defaultUom() || '—' }} · type {{ facade.defaultInvType() || '—' }}
+      unit {{ facade.defaultUomLabel() || '—' }} · type {{ facade.defaultInvTypeLabel() || '—' }}
     </p>
   }
 
@@ -25,6 +24,7 @@
     <div class="banner banner-error">{{ error() }}</div>
   }
 
+  <div class="list-section">
   <div class="list-title-row">
     <h3 class="list-title">Existing ({{ filteredCategories().length }})</h3>
     <div class="list-title-controls">
@@ -52,13 +52,35 @@
       </label>
     </div>
   </div>
-  @if (pagedCategories().length) {
+  @if (facade.isLoading()) {
+    <div class="empty-state">
+      <div class="empty-state-icon spinner"></div>
+      <h3 class="empty-state-title">Loading…</h3>
+      <p class="empty-state-text">Fetching categories from the server.</p>
+    </div>
+  } @else if (pagedCategories().length) {
     <div class="table-scroll">
       <table class="master-table">
-        <thead><tr><th>Name</th></tr></thead>
+        <thead>
+          <tr>
+            @for (column of columns; track column.key) {
+              <th [attr.aria-sort]="ariaSort(column.key)" [class.numeric-col]="column.key === 'products'">
+                <button type="button" class="sort-header" (click)="sortBy(column.key)">
+                  {{ column.label }}
+                  <span class="sort-arrow" [class.sort-arrow--active]="sortKey() === column.key">
+                    {{ sortArrow(column.key) }}
+                  </span>
+                </button>
+              </th>
+            }
+          </tr>
+        </thead>
         <tbody>
           @for (cat of pagedCategories(); track cat.categoryCode) {
-            <tr><td>{{ cat.categoryName || cat.categoryCode }}</td></tr>
+            <tr>
+              <td>{{ displayName(cat) }}</td>
+              <td class="numeric-col">{{ productCount(cat) }}</td>
+            </tr>
           }
         </tbody>
       </table>
@@ -79,8 +101,26 @@
       </div>
     }
   } @else if (searchTerm().trim()) {
-    <p class="empty-state">No categories match “{{ searchTerm() }}”.</p>
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </div>
+      <h3 class="empty-state-title">No matches</h3>
+      <p class="empty-state-text">Nothing here matches “{{ searchTerm() }}”.</p>
+    </div>
   } @else {
-    <p class="empty-state">No categories yet.</p>
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 7a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"></path>
+        </svg>
+      </div>
+      <h3 class="empty-state-title">No categories yet</h3>
+      <p class="empty-state-text">Add your first one above — every product belongs to a category.</p>
+    </div>
   }
+  </div>
 </div>

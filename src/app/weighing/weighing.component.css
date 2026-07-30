@@ -51,6 +51,14 @@
   font-size: 0.82rem;
   color: var(--muted);
 }
+.field > span {
+  line-height: 17px;
+}
+/* One height for every control so a row of text/date/select fields sits level. */
+.field select,
+.field input:not([type='checkbox']):not([type='radio']) {
+  height: var(--control-height);
+}
 .field select,
 .field input {
   padding: 9px 10px;
@@ -118,10 +126,11 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
-  align-items: end;
+  align-items: start;
 }
 .session-start {
-  height: 40px;
+  height: var(--control-height);
+  margin-top: var(--field-label-offset);
 }
 
 .session-locked {
@@ -373,19 +382,53 @@
   border-collapse: collapse;
   font-size: 0.88rem;
 }
+/* Tinted band so the sortable header reads as a control strip, not a first row. */
 .recent-table th {
   text-align: left;
-  color: var(--muted);
+  color: var(--text);
+  background: var(--pending-tint);
   font-weight: 600;
   font-size: 0.78rem;
-  padding: 6px 10px 6px 0;
+  letter-spacing: 0.02em;
+  /* The sort button carries the padding so the whole header cell is clickable. */
+  padding: 0;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
+.sort-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.sort-header:hover {
+  color: var(--accent);
+}
+/* Dimmed on every column as an affordance; solid on the one in force. */
+.sort-arrow {
+  font-size: 0.65rem;
+  opacity: 0.25;
+}
+.sort-arrow--active {
+  opacity: 1;
+  color: var(--accent);
+}
+/* Matches the header button's 10px inset so labels sit over their column. */
 .recent-table td {
-  padding: 10px 10px 10px 0;
+  padding: 10px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
+}
+.recent-batch {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  white-space: nowrap;
 }
 .recent-weight {
   font-family: var(--font-mono);

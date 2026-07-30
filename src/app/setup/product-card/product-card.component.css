@@ -2,7 +2,7 @@
 .create-form {
   display: flex;
   gap: 12px;
-  align-items: end;
+  align-items: flex-start;
   flex-wrap: wrap;
 }
 .create-form .grow {
@@ -10,7 +10,8 @@
   min-width: 200px;
 }
 .create-form .btn {
-  height: 40px;
+  height: var(--control-height);
+  margin-top: var(--field-label-offset);
 }
 
 .defaults-line {
@@ -136,23 +137,118 @@
 
 .table-scroll {
   overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
 }
+/* Reading half of the card, fenced off from the create form above it. Capped in
+   width because two text columns stretched across a wide card read as mostly gap —
+   the cap covers the search row, table and pagination so they stay one block. */
+.list-section {
+  margin-top: 20px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+  max-width: 640px;
+}
+
 .master-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.88rem;
 }
+/* Tinted band so the sortable header reads as a control strip, not a first row. */
 .master-table th {
   text-align: left;
-  color: var(--muted);
+  color: var(--text);
+  background: var(--pending-tint);
   font-weight: 600;
   font-size: 0.78rem;
-  padding: 6px 10px 6px 0;
+  letter-spacing: 0.02em;
+  /* The sort button carries the padding so the whole header cell is clickable. */
+  padding: 0;
   border-bottom: 1px solid var(--border);
 }
 .master-table td {
-  padding: 8px 10px 8px 0;
+  padding: 8px 10px;
   border-bottom: 1px solid var(--border);
+}
+/* Ruled grid. The outer frame lives on .table-scroll so its radius can clip the
+   corners — border-collapse would otherwise square them off. */
+.master-table th,
+.master-table td {
+  border-right: 1px solid var(--border);
+}
+.master-table th:last-child,
+.master-table td:last-child {
+  border-right: none;
+}
+.master-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.sort-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.sort-header:hover {
+  color: var(--accent);
+}
+/* Dimmed on every column as an affordance; solid on the one in force. */
+.sort-arrow {
+  font-size: 0.65rem;
+  opacity: 0.25;
+}
+.sort-arrow--active {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 44px 24px;
+  text-align: center;
+}
+.empty-state-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--pending-tint);
+  color: var(--muted);
+}
+.empty-state-icon.spinner {
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.empty-state-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.empty-state-text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  max-width: 320px;
 }
 
 .category-list {

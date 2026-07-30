@@ -2,7 +2,7 @@
 .create-form {
   display: flex;
   gap: 12px;
-  align-items: end;
+  align-items: flex-start;
   flex-wrap: wrap;
 }
 .create-form .grow {
@@ -10,7 +10,8 @@
   min-width: 200px;
 }
 .create-form .btn {
-  height: 40px;
+  height: var(--control-height);
+  margin-top: var(--field-label-offset);
 }
 .checkbox-field {
   flex-direction: row;
@@ -19,6 +20,12 @@
 }
 .checkbox-field input {
   width: auto;
+}
+/* Has no label of its own, so in the field row it needs the label offset to
+   land on the same line as the inputs beside it (the modal copy doesn't). */
+.create-form .checkbox-field {
+  height: var(--control-height);
+  margin-top: var(--field-label-offset);
 }
 .required-mark {
   color: #d33;

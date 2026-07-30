@@ -6,7 +6,17 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { HttpGetService } from '../../services/http-get.service';
 import { MaterialApiService, ProductRow } from '../../services/masters/material-api.service';
-import { WeightScaleReportItem, downloadBlob, todayIso } from '../models/weight-scale-report.model';
+import {
+  REPORT_COLUMNS,
+  REPORT_DESCENDING_FIRST,
+  REPORT_STATUS_OPTIONS,
+  WeightScaleReportItem,
+  compareReportRows,
+  downloadBlob,
+  todayIso,
+  type ReportSortKey,
+} from '../models/weight-scale-report.model';
+import { toUnitSymbol } from '../../services/data/units';
 
 @Component({
   selector: 'app-product-report',
@@ -20,6 +30,8 @@ export class ProductReportComponent {
     fromDt: [todayIso(), Validators.required],
     toDt: [todayIso(), Validators.required],
     productCode: [''],
+    // Reports default to signed-off records for today; widen either as needed.
+    status: ['APPROVED'],
   });
 
   readonly rows = signal<WeightScaleReportItem[]>([]);
@@ -45,6 +57,21 @@ export class ProductReportComponent {
     );
   });
 
+  readonly columns = REPORT_COLUMNS;
+  // Null until the reader picks a column, so the report first appears in server order.
+  readonly sortKey = signal<ReportSortKey | null>(null);
+  readonly sortDir = signal<'asc' | 'desc'>('asc');
+
+  /** Sorted before paging, so the order runs across the whole report, not one page of it. */
+  readonly sortedRows = computed(() => {
+    const key = this.sortKey();
+    if (!key) {
+      return this.filteredRows();
+    }
+    const direction = this.sortDir() === 'asc' ? 1 : -1;
+    return [...this.filteredRows()].sort((a, b) => direction * compareReportRows(a, b, key));
+  });
+
   readonly pageSize = signal(10);
   readonly currentPage = signal(1);
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.filteredRows().length / this.pageSize())));
@@ -52,8 +79,34 @@ export class ProductReportComponent {
     const page = Math.min(this.currentPage(), this.totalPages());
     const size = this.pageSize();
     const start = (page - 1) * size;
-    return this.filteredRows().slice(start, start + size);
+    return this.sortedRows().slice(start, start + size);
   });
+
+  /** Clicking the active column flips direction; a new column opens on its most useful end. */
+  sortBy(key: ReportSortKey): void {
+    if (this.sortKey() === key) {
+      this.sortDir.update((dir) => (dir === 'asc' ? 'desc' : 'asc'));
+    } else {
+      this.sortKey.set(key);
+      this.sortDir.set(REPORT_DESCENDING_FIRST.has(key) ? 'desc' : 'asc');
+    }
+    this.currentPage.set(1);
+  }
+
+  sortArrow(key: ReportSortKey): string {
+    return this.sortKey() === key && this.sortDir() === 'asc' ? '▲' : '▼';
+  }
+
+  ariaSort(key: ReportSortKey): 'ascending' | 'descending' | 'none' {
+    if (this.sortKey() !== key) {
+      return 'none';
+    }
+    return this.sortDir() === 'asc' ? 'ascending' : 'descending';
+  }
+
+  unitSymbol(unitWeight: string): string {
+    return toUnitSymbol(unitWeight);
+  }
 
   /** Page numbers to render, with `null` standing in for a "…" gap. Always shows first/last and a window around the current page. */
   readonly pageNumbers = computed<(number | null)[]>(() => {
@@ -100,10 +153,15 @@ export class ProductReportComponent {
     this.materialApi.listProducts().subscribe((rows) => this.products.set(rows));
   }
 
-  private buildQuery(fromDt: string, toDt: string, productCode: string): string {
+  readonly statusOptions = REPORT_STATUS_OPTIONS;
+
+  private buildQuery(fromDt: string, toDt: string, productCode: string, status: string): string {
     const params = new URLSearchParams({ fromDt, toDt });
     if (productCode) {
       params.set('productCode', productCode);
+    }
+    if (status) {
+      params.set('status', status);
     }
     return params.toString();
   }
@@ -114,7 +172,7 @@ export class ProductReportComponent {
       return;
     }
 
-    const { fromDt, toDt, productCode } = this.filterForm.getRawValue();
+    const { fromDt, toDt, productCode, status } = this.filterForm.getRawValue();
     this.isLoading.set(true);
     this.loadError.set(null);
     this.hasSearched.set(true);
@@ -123,7 +181,7 @@ export class ProductReportComponent {
 
     this.httpGet
       .getSfa<{ response?: WeightScaleReportItem[] } | WeightScaleReportItem[]>(
-        `api/weightscaleproduct/reports?${this.buildQuery(fromDt!, toDt!, productCode ?? '')}`
+        `api/weightscaleproduct/reports?${this.buildQuery(fromDt!, toDt!, productCode ?? '', status ?? '')}`
       )
       .subscribe({
         next: (res) => {
@@ -144,12 +202,12 @@ export class ProductReportComponent {
       return;
     }
 
-    const { fromDt, toDt, productCode } = this.filterForm.getRawValue();
+    const { fromDt, toDt, productCode, status } = this.filterForm.getRawValue();
     this.isExporting.set(true);
     this.loadError.set(null);
 
     this.httpGet
-      .getSfaBlob(`api/weightscaleproduct/reports/xls?${this.buildQuery(fromDt!, toDt!, productCode ?? '')}`)
+      .getSfaBlob(`api/weightscaleproduct/reports/xls?${this.buildQuery(fromDt!, toDt!, productCode ?? '', status ?? '')}`)
       .subscribe({
         next: (blob) => {
           downloadBlob(blob, `product-report-${fromDt}-to-${toDt}.xlsx`);
@@ -173,13 +231,13 @@ export class ProductReportComponent {
       return;
     }
 
-    const { fromDt, toDt, productCode } = this.filterForm.getRawValue();
+    const { fromDt, toDt, productCode, status } = this.filterForm.getRawValue();
     this.isExportingPdf.set(true);
     this.loadError.set(null);
 
     this.httpGet
       .getSfa<{ response?: WeightScaleReportItem[] } | WeightScaleReportItem[]>(
-        `api/weightscaleproduct/reports?${this.buildQuery(fromDt!, toDt!, productCode ?? '')}`
+        `api/weightscaleproduct/reports?${this.buildQuery(fromDt!, toDt!, productCode ?? '', status ?? '')}`
       )
       .subscribe({
         next: (res) => {
@@ -197,32 +255,86 @@ export class ProductReportComponent {
 
   private buildPdf(rows: WeightScaleReportItem[], fromDt: string, toDt: string): void {
     const doc = new jsPDF({ orientation: 'landscape' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
 
-    doc.setFontSize(14);
-    doc.text('Product Report', 14, 16);
-    doc.setFontSize(12);
-    doc.text(`${fromDt} to ${toDt}`, 14, 22);
+    // Title block: what the report is, what it covers, and when it was taken — a
+    // printed report gets separated from its screen, so it has to say so itself.
+    doc.setFillColor(37, 99, 235);
+    doc.rect(0, 0, pageWidth, 20, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text('Product Report', 14, 13);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('Zoulte Scale', pageWidth - 14, 13, { align: 'right' });
+
+    doc.setTextColor(70, 70, 70);
+    doc.setFontSize(9);
+    doc.text(`Period  ${fromDt}  to  ${toDt}`, 14, 27);
+    doc.text(`Records  ${rows.length}`, 100, 27);
+    doc.text(`Generated  ${this.datePipe.transform(new Date(), 'yyyy-MM-dd HH:mm') ?? ''}`, pageWidth - 14, 27, {
+      align: 'right',
+    });
+    doc.setDrawColor(220, 220, 220);
+    doc.line(14, 31, pageWidth - 14, 31);
 
     if (rows.length) {
+      // Same columns, same order, same unit symbol as the table on screen — an export
+      // that doesn't match what was just read is a support call waiting to happen.
       autoTable(doc, {
-        startY: 28,
-        head: [['Product', 'Batch', 'Manufacturer', 'Mfg Date', 'Expiry Date', 'Weight']],
+        startY: 36,
+        head: [['Date', 'Time', 'Product', 'Weight', 'Batch', 'Mfd Date', 'Expiry Date', 'Manufacturer', 'Status']],
         body: rows.map((row) => [
+          this.datePipe.transform(row.createddate, 'yyyy-MM-dd') ?? '',
+          this.datePipe.transform(row.createddate, 'HH:mm:ss') ?? '',
           row.productName ?? '',
+          `${row.netWeight ?? ''} ${toUnitSymbol(row.unitWeight ?? '')}`.trim(),
           row.batchNo ?? '',
-          row.manufacturerName ?? '',
           this.datePipe.transform(row.manufacturingDate, 'yyyy-MM-dd') ?? '',
           this.datePipe.transform(row.expiryDate, 'yyyy-MM-dd') ?? '',
-          `${row.netWeight ?? ''} ${row.unitWeight ?? ''}`.trim(),
+          row.manufacturerName ?? '',
+          row.status ?? '',
         ]),
-        styles: { fontSize: 11 },
-        headStyles: { fillColor: [37, 99, 235] },
+        theme: 'grid',
+        styles: { fontSize: 8.5, cellPadding: 2.5, lineColor: [225, 225, 225], textColor: [40, 40, 40] },
+        headStyles: {
+          fillColor: [37, 99, 235],
+          textColor: 255,
+          fontStyle: 'bold',
+          fontSize: 8,
+          halign: 'left',
+        },
+        alternateRowStyles: { fillColor: [247, 249, 252] },
+        // Figures in courier so dates and weights line up column-wise, as on screen.
+        columnStyles: {
+          0: { font: 'courier', cellWidth: 24 },
+          1: { font: 'courier', cellWidth: 20 },
+          3: { font: 'courier', halign: 'right', cellWidth: 24 },
+          5: { font: 'courier', cellWidth: 24 },
+          6: { font: 'courier', cellWidth: 24 },
+        },
+        margin: { left: 14, right: 14, bottom: 18 },
+        didDrawPage: () => this.stampFooter(doc, pageWidth, pageHeight),
       });
     } else {
-      doc.setFontSize(11);
-      doc.text('No data found.', 14, 34);
+      doc.setTextColor(120, 120, 120);
+      doc.setFontSize(10);
+      doc.text('No records matched this report.', 14, 42);
+      this.stampFooter(doc, pageWidth, pageHeight);
     }
 
     doc.save(`product-report-${fromDt}-to-${toDt}.pdf`);
+  }
+
+  /** Page number and provenance on every page — printed sheets get separated. */
+  private stampFooter(doc: jsPDF, pageWidth: number, pageHeight: number): void {
+    const page = doc.getNumberOfPages();
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(140, 140, 140);
+    doc.text('Zoulte Scale — Product Report', 14, pageHeight - 8);
+    doc.text(`Page ${page}`, pageWidth - 14, pageHeight - 8, { align: 'right' });
   }
 }

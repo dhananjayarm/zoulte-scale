@@ -49,7 +49,9 @@ export interface ProductCreate {
   materialCategoryCode: string;
   invTypeCode: string;
   defaultUom?: string;
-}
+  multiplier?: any;
+   isactive: boolean;
+  }
 
 interface Envelope<T> {
   status: { message: string; userMessage?: string };
@@ -81,10 +83,10 @@ export class MaterialApiService {
   }
 
   listProducts(): Observable<ProductRow[]> {
-    // Legacy MaterialMasterDTO speaks productName/productCode/productCategory —
+    // SFA's getProductsInfo speaks productName/productCode/productCategory —
     // translate here so the rest of the app keeps the catalog-engine field
     // names (the planned /cat switch then deletes these mappings, not callers).
-    return this.httpGet.get<Envelope<LegacyProductRow[]>>('api/cr/inv/products').pipe(
+    return this.httpGet.getSfa<Envelope<LegacyProductRow[]>>('api/getProductsInfo').pipe(
       map((env) =>
         (env.response ?? []).map((row) => ({
           materialCode: row.productCode,
@@ -103,6 +105,8 @@ export class MaterialApiService {
       productCategory: product.materialCategoryCode,
       invTypeCode: product.invTypeCode,
       defaultUom: product.defaultUom,
+      multiplier :product.multiplier,
+       isactive:true,
     };
     return this.httpPost.post('api/cr/inv/product', { product: legacy, inventory: null, price: [] });
   }

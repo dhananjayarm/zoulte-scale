@@ -53,6 +53,10 @@ body {
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
 
+  /* Single source of truth for every top-level page's left/right padding
+     (weighing, verification, setup, reports) — change once, applies everywhere. */
+  --page-padding-x: 24px;
+
   /* DM Sans/Mono are bundled TTFs (assets/fonts) — the station must render
      identically with zero network. Mono carries the figures: weights, times,
      counts all align digit-for-digit. */

@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Users — preview v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    --accent: #2563eb; --accent-hover: #1d4ed8; --accent-tint: #eff6ff;
+    --sidebar-bg: #0f1e2e; --sidebar-text: rgba(255,255,255,.85);
+    --bg: #f4f6f9; --border: #e5e7eb; --text: #1f2937; --muted: #6b7280;
+    --success: #16a34a; --success-tint: #f0fdf4;
+    --warn: #d97706; --warn-tint: #fffbeb;
+    --danger: #dc2626; --danger-tint: #fef2f2;
+    --pending: #6b7280; --pending-tint: #f3f4f6;
+    --surface: #fff; --radius: 10px; --radius-sm: 6px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08);
+    --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+    --page-padding-x: 24px;
+    --font-ui: 'DM Sans','Segoe UI',system-ui,sans-serif;
+    --font-mono: 'DM Mono',Consolas,'Courier New',monospace;
+    margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-ui);
+  }
+  h1,h2,h3 { letter-spacing: -0.01em; margin: 0; }
+  button, input, select { font-family: inherit; }
+
+  .sidebar { width: 220px; background: var(--sidebar-bg); position: fixed; top:0; left:0; height:100vh; padding: 16px 8px 0; }
+  .sb-logo { display:flex; align-items:center; gap:10px; padding:4px 8px 18px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,.08);}
+  .logo-box { width:32px;height:32px;border-radius:9px;background:var(--accent);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;}
+  .logo-text { color:#fff;font-weight:700;font-size:15px;}
+  .sb-sec-label { display:block; color:rgba(255,255,255,.45); font-size:10px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; padding:14px 14px 6px;}
+  .sb-kid { display:block; padding:8px 12px 8px 14px; margin:1px 6px; border-radius:7px; color:var(--sidebar-text); font-size:.9rem; font-weight:600; text-decoration:none;}
+  .sb-kid.active { color:#fff; font-weight:700; background:var(--accent);}
+  .topbar { position:fixed; top:0; left:220px; right:0; height:64px; background:#fff; border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 20px; z-index:10;}
+  .topbar h1 { font-size:1.2rem; flex:1; }
+  .avatar { width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .main { margin-left:220px; padding-top:64px; }
+
+  .setup-page { padding: 20px var(--page-padding-x) 56px; max-width: 980px; }
+  .setup-head h1 { font-size: 1.35rem; margin-bottom: 2px; }
+  .section-hint { margin:0 0 14px; color:var(--muted); font-size:.85rem; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; }
+  .card h2 { font-size:1.05rem; margin-bottom:4px; }
+  .required-mark { color:#d33; }
+
+  .user-form { display:flex; gap:12px; align-items:end; flex-wrap:wrap; margin-top:12px;}
+  .field { display:flex; flex-direction:column; gap:5px; font-size:.82rem; color:var(--muted); }
+  .field.grow { flex:1; min-width:200px; }
+  .field input, .field select { padding:9px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:.92rem; color:var(--text); background:var(--surface); min-width:170px;}
+  .field input:focus, .field select:focus { outline:none; border-color:var(--accent); box-shadow:var(--focus-ring);}
+  .field-help { font-size:.76rem; color:var(--muted); }
+  .readonly-chip { display:inline-flex; align-items:center; gap:6px; padding:9px 12px; border-radius:var(--radius-sm); background:var(--bg); border:1px solid var(--border); font-size:.9rem; color:var(--text); min-width:170px; }
+  .btn { padding:9px 18px; border:none; border-radius:var(--radius-sm); font-size:.9rem; font-weight:600; cursor:pointer; height:40px;}
+  .btn-primary { background:var(--accent); color:#fff;}
+  .btn-primary:hover { background:var(--accent-hover);}
+  .btn-ghost { background:none; color:var(--muted); border:1px solid var(--border); }
+
+  .roles-field { position:relative; min-width:220px; }
+  .roles-trigger { display:flex; align-items:center; justify-content:space-between; width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); font-size:.92rem; color:var(--text); cursor:pointer; text-align:left; }
+  .roles-trigger.open { border-color:var(--accent); box-shadow:var(--focus-ring); }
+  .roles-trigger-label.placeholder { color:var(--muted); }
+  .roles-caret { color:var(--muted); margin-left:8px; }
+  .roles-menu { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:1000; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); box-shadow:var(--shadow); max-height:220px; overflow-y:auto; padding:6px; }
+  .roles-menu.open { display:block; }
+  .roles-option { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:var(--radius-sm); cursor:pointer; font-size:.88rem; color:var(--text); }
+  .roles-option:hover { background:var(--accent-tint); }
+  .roles-option input { width:auto; }
+
+  .password-field { display:flex; gap:6px; min-width:180px; }
+  .password-field input { flex:1; }
+  .eye-btn { flex-shrink:0; width:40px; display:flex; align-items:center; justify-content:center; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface); color:var(--muted); cursor:pointer; }
+  .eye-btn:hover { color:var(--text); border-color:var(--accent); }
+
+  .banner { padding:10px 12px; border-radius:var(--radius-sm); font-size:.85rem; margin-top:12px; }
+  .banner-success { background:var(--success-tint); color:var(--success); border:1px solid color-mix(in srgb, var(--success) 25%, transparent); }
+
+  .list-title-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin: 20px 0 8px; flex-wrap: wrap; }
+  .list-title { font-size:.85rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;}
+  .search-box { padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:.85rem; min-width:220px;}
+  .table-scroll { overflow-x:auto; }
+  .master-table { width:100%; border-collapse:collapse; font-size:.88rem; }
+  .master-table th { text-align:left; color:var(--muted); font-weight:600; font-size:.78rem; padding:6px 10px 6px 0; border-bottom:1px solid var(--border);}
+  .master-table td { padding:9px 10px 9px 0; border-bottom:1px solid var(--border);}
+  .chip { display:inline-flex; align-items:center; gap:6px; padding:2px 10px; border-radius:999px; font-size:.75rem; font-weight:600; line-height:1.6; white-space:nowrap; }
+  .chip--success { background:var(--success-tint); color:var(--success); }
+  .chip--danger { background:var(--danger-tint); color:var(--danger); }
+  .chip--warn { background:var(--warn-tint); color:var(--warn); }
+  .chip--pending { background:var(--pending-tint); color:var(--pending); }
+  .chip__dot { width:7px;height:7px;border-radius:50%;background:currentColor; }
+  .action-icon-btn { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--accent); cursor:pointer; }
+  .action-icon-btn:hover { background:var(--accent-tint); border-color:var(--accent); }
+
+  .ledger { margin-top: 24px; }
+  .ledger summary { cursor:pointer; font-weight:600; font-size:.9rem; color: var(--accent); padding: 10px 0; }
+  .ledger table { width:100%; border-collapse:collapse; font-size:.85rem; margin-top:8px;}
+  .ledger th { text-align:left; background:var(--bg); padding:8px 10px; border-bottom:1px solid var(--border);}
+  .ledger td { padding:8px 10px; border-bottom:1px solid var(--border); vertical-align:top;}
+  .audit-note { background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius-sm); padding:12px 16px; font-size:.85rem; color:#92400e; margin-bottom:16px;}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sb-logo"><span class="logo-box">ZS</span><span class="logo-text">Zoulte Scale</span></div>
+  <nav>
+    <span class="sb-sec-label">Operations</span>
+    <a class="sb-kid">Weighing</a>
+    <a class="sb-kid">Verification</a>
+    <a class="sb-kid">Reports</a>
+    <span class="sb-sec-label">Setup</span>
+    <a class="sb-kid">Categories</a>
+    <a class="sb-kid">Products</a>
+    <a class="sb-kid">Employees</a>
+    <a class="sb-kid active">Users</a>
+  </nav>
+</aside>
+<header class="topbar"><h1>Users</h1><span class="avatar">RK</span></header>
+
+<div class="main">
+  <div class="setup-page">
+    <div class="audit-note">Preview v1 — Account Locked / Password Expired / First Login / Active now render as chips (matching the app's status vocabulary), the password minimum length shows before an attempt rather than only after, and editing a user keeps the employee visible as a read-only field instead of removing it. Try Edit on a row below, and open the Roles dropdown.</div>
+
+    <header class="setup-head">
+      <h1>Users</h1>
+      <p class="section-hint">Create logins for employees and assign their roles. <span class="required-mark">*</span> marks required fields.</p>
+    </header>
+
+    <section class="card">
+      <h2>Users</h2>
+      <p class="section-hint">Create a login for an employee and assign roles. <span class="required-mark">*</span> marks required fields.</p>
+
+      <form class="user-form">
+        <label class="field" id="employeeFieldWrap">
+          <span>Employee <span class="required-mark">*</span></span>
+          <select id="employeeSel">
+            <option>Choose Employee</option>
+            <option>Priya Sharma</option>
+            <option>Ramesh Iyer</option>
+          </select>
+        </label>
+        <div class="field" id="employeeReadonlyWrap" style="display:none">
+          <span>Employee</span>
+          <span class="readonly-chip">👤 Priya Sharma</span>
+        </div>
+
+        <label class="field grow">
+          <span>User Name <span class="required-mark">*</span></span>
+          <input type="text" id="userNameInput" placeholder="e.g. priya.sharma" />
+        </label>
+
+        <div class="field roles-field">
+          <span>Roles <span class="required-mark">*</span></span>
+          <button type="button" class="roles-trigger" id="rolesTrigger">
+            <span class="roles-trigger-label placeholder" id="rolesLabel">Select Roles</span>
+            <span class="roles-caret">▾</span>
+          </button>
+          <div class="roles-menu" id="rolesMenu">
+            <label class="roles-option"><input type="checkbox" value="OPERATOR" /><span>OPERATOR</span></label>
+            <label class="roles-option"><input type="checkbox" value="VERIFIER" /><span>VERIFIER</span></label>
+            <label class="roles-option"><input type="checkbox" value="ADMIN" /><span>ADMIN</span></label>
+          </div>
+        </div>
+
+        <label class="field">
+          <span>Password <span class="required-mark">*</span></span>
+          <div class="password-field">
+            <input type="password" id="pwInput" placeholder="Password" />
+            <button type="button" class="eye-btn" data-eye="pwInput">👁</button>
+          </div>
+          <span class="field-help">At least 6 characters.</span>
+        </label>
+
+        <label class="field">
+          <span>Confirm Password <span class="required-mark">*</span></span>
+          <div class="password-field">
+            <input type="password" id="pwConfirmInput" placeholder="Confirm password" />
+            <button type="button" class="eye-btn" data-eye="pwConfirmInput">👁</button>
+          </div>
+        </label>
+
+        <button type="submit" class="btn btn-primary" id="userSubmitBtn">Create user</button>
+        <button type="button" class="btn btn-ghost" style="display:none" id="userCancelBtn">Cancel</button>
+      </form>
+
+      <div class="banner banner-success" style="display:none">"priya.sharma" saved.</div>
+
+      <div class="list-title-row">
+        <span class="list-title">Existing (4)</span>
+        <input type="search" class="search-box" placeholder="Search users…" />
+      </div>
+      <div class="table-scroll">
+        <table class="master-table">
+          <thead>
+            <tr><th>User Name</th><th>Account Locked</th><th>Password Expired</th><th>First Login</th><th>Active</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>priya.sharma</td>
+              <td><span class="chip chip--success"><span class="chip__dot"></span>No</span></td>
+              <td><span class="chip chip--success"><span class="chip__dot"></span>No</span></td>
+              <td><span class="chip chip--pending"><span class="chip__dot"></span>No</span></td>
+              <td><span class="chip chip--success"><span class="chip__dot"></span>Active</span></td>
+              <td><button class="action-icon-btn" title="Edit" id="editRow1">✎</button></td>
+            </tr>
+            <tr>
+              <td>ramesh.iyer</td>
+              <td><span class="chip chip--danger"><span class="chip__dot"></span>Yes</span></td>
+              <td><span class="chip chip--success"><span class="chip__dot"></span>No</span></td>
+              <td><span class="chip chip--pending"><span class="chip__dot"></span>No</span></td>
+              <td><span class="chip chip--success"><span class="chip__dot"></span>Active</span></td>
+              <td><button class="action-icon-btn" title="Edit">✎</button></td>
+            </tr>
+            <tr>
+              <td>sunita.reddy</td>
+              <td><span class="chip chip--success"><span class="chip__dot"></span>No</span></td>
+              <td><span class="chip chip--warn"><span class="chip__dot"></span>Yes</span></td>
+              <td><span class="chip chip--pending"><span class="chip__dot"></span>No</span></td>
+              <td><span class="chip chip--success"><span class="chip__dot"></span>Active</span></td>
+              <td><button class="action-icon-btn" title="Edit">✎</button></td>
+            </tr>
+            <tr>
+              <td>vikram.nair</td>
+              <td><span class="chip chip--success"><span class="chip__dot"></span>No</span></td>
+              <td><span class="chip chip--success"><span class="chip__dot"></span>No</span></td>
+              <td><span class="chip chip--success"><span class="chip__dot"></span>Yes</span></td>
+              <td><span class="chip chip--pending"><span class="chip__dot"></span>Inactive</span></td>
+              <td><button class="action-icon-btn" title="Edit">✎</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <details class="ledger">
+      <summary>Implementation-cost ledger</summary>
+      <table>
+        <thead><tr><th>Existing components</th><th>CSS-only</th><th>New shared components</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Form fields, roles dropdown, password eye-toggle, table — all unchanged shell primitives and behavior.</td>
+            <td>Four boolean table columns swapped from text to `.chip` (template-only, same pattern as `readout-state`). Password helper text moved from error-only to always-visible `.field-help` beneath the input. Employee field grows a read-only sibling (`.readonly-chip`) shown via `@if (editingUser())`, replacing the current `@if (!editingUser())`-only field with an else-branch — no new control, no payload change.</td>
+            <td>None.</td>
+          </tr>
+        </tbody>
+      </table>
+    </details>
+  </div>
+</div>
+
+<script>
+  const trigger = document.getElementById('rolesTrigger');
+  const menu = document.getElementById('rolesMenu');
+  const label = document.getElementById('rolesLabel');
+  trigger.addEventListener('click', () => {
+    menu.classList.toggle('open');
+    trigger.classList.toggle('open');
+  });
+  menu.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const checked = Array.from(menu.querySelectorAll('input:checked')).map(i => i.value);
+      if (checked.length) {
+        label.textContent = checked.join(', ');
+        label.classList.remove('placeholder');
+      } else {
+        label.textContent = 'Select Roles';
+        label.classList.add('placeholder');
+      }
+    });
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.roles-field')) {
+      menu.classList.remove('open');
+      trigger.classList.remove('open');
+    }
+  });
+
+  document.querySelectorAll('[data-eye]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.eye);
+      input.type = input.type === 'password' ? 'text' : 'password';
+    });
+  });
+
+  document.getElementById('editRow1').addEventListener('click', () => {
+    document.getElementById('employeeFieldWrap').style.display = 'none';
+    document.getElementById('employeeReadonlyWrap').style.display = 'flex';
+    document.getElementById('userNameInput').value = 'priya.sharma';
+    document.getElementById('userNameInput').disabled = true;
+    document.getElementById('userSubmitBtn').textContent = 'Update user';
+    document.getElementById('userCancelBtn').style.display = 'inline-block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  document.getElementById('userCancelBtn').addEventListener('click', () => {
+    document.getElementById('employeeFieldWrap').style.display = 'flex';
+    document.getElementById('employeeReadonlyWrap').style.display = 'none';
+    document.getElementById('userNameInput').value = '';
+    document.getElementById('userNameInput').disabled = false;
+    document.getElementById('userSubmitBtn').textContent = 'Create user';
+    document.getElementById('userCancelBtn').style.display = 'none';
+  });
+</script>
+</body>
+</html>

@@ -65,15 +65,41 @@
     <div class="banner banner-error">{{ error() }}</div>
   }
 
-  <h3 class="list-title">Existing ({{ facade.products().length }})</h3>
-  @if (facade.products().length) {
+  <div class="list-title-row">
+    <h3 class="list-title">Existing ({{ filteredProducts().length }})</h3>
+    <div class="list-title-controls">
+      <input
+        type="search"
+        class="search-box"
+        placeholder="Search products…"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="onSearchChange($event)"
+        [ngModelOptions]="{ standalone: true }"
+        aria-label="Search products"
+      />
+      <label class="page-size-field">
+        <span>Rows</span>
+        <select
+          [ngModel]="pageSize()"
+          (ngModelChange)="onPageSizeChange($event)"
+          [ngModelOptions]="{ standalone: true }"
+          aria-label="Rows per page"
+        >
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="25">25</option>
+          <option [ngValue]="50">50</option>
+        </select>
+      </label>
+    </div>
+  </div>
+  @if (pagedProducts().length) {
     <div class="table-scroll">
       <table class="master-table">
         <thead>
           <tr><th>Name</th><th>Category</th></tr>
         </thead>
         <tbody>
-          @for (product of facade.products(); track product.materialCode) {
+          @for (product of pagedProducts(); track product.materialCode) {
             <tr>
               <td>{{ product.materialName }}</td>
               <td>{{ categoryName(product.materialCategoryCode) }}</td>
@@ -82,6 +108,23 @@
         </tbody>
       </table>
     </div>
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button type="button" class="btn btn-ghost btn-sm" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">Previous</button>
+        <div class="page-numbers">
+          @for (p of pageNumbers(); track $index) {
+            @if (p === null) {
+              <span class="page-ellipsis">…</span>
+            } @else {
+              <button type="button" class="page-num-btn" [class.active]="p === currentPage()" (click)="goToPage(p)">{{ p }}</button>
+            }
+          }
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">Next</button>
+      </div>
+    }
+  } @else if (searchTerm().trim()) {
+    <p class="empty-state">No products match “{{ searchTerm() }}”.</p>
   } @else {
     <p class="empty-state">No products yet.</p>
   }

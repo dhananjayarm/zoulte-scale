@@ -1,0 +1,252 @@
+<ng-template #eyeIcon>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path>
+    <circle cx="12" cy="12" r="3"></circle>
+  </svg>
+</ng-template>
+<ng-template #eyeOffIcon>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
+    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68"></path>
+    <path d="M6.61 6.61A13.526 13.526 0 0 0 1 12s4 7 11 7a9.74 9.74 0 0 0 5.39-1.61"></path>
+    <line x1="2" y1="2" x2="22" y2="22"></line>
+  </svg>
+</ng-template>
+
+<div class="card">
+  <h2>Users</h2>
+  <p class="section-hint">Create a login for an employee and assign roles. <span class="required-mark">*</span> marks required fields.</p>
+
+  <form class="user-form" [formGroup]="form" (ngSubmit)="save()">
+    @if (!editingUser()) {
+      <label class="field">
+        <span>Employee <span class="required-mark">*</span></span>
+        <select formControlName="employeeCode">
+          <option value="">Choose Employee</option>
+          @for (emp of employees(); track emp.employeeCode) {
+            <option [value]="emp.employeeCode">{{ emp.employeeName }}</option>
+          }
+        </select>
+        @if (form.controls.employeeCode.invalid && form.controls.employeeCode.touched) {
+          <span class="field-error">Employee is required.</span>
+        }
+      </label>
+    } @else {
+      <div class="field">
+        <span>Employee</span>
+        <span class="readonly-chip">{{ editingEmployeeName() }}</span>
+      </div>
+    }
+
+    <label class="field grow">
+      <span>User Name <span class="required-mark">*</span></span>
+      <input type="text" formControlName="userName" placeholder="e.g. jane.doe" />
+      @if (form.controls.userName.invalid && form.controls.userName.touched) {
+        <span class="field-error">User Name is required.</span>
+      }
+    </label>
+
+    <div class="field roles-field">
+      <span>Roles <span class="required-mark">*</span></span>
+      <button
+        type="button"
+        class="roles-trigger"
+        [class.open]="rolesMenuOpen()"
+        (click)="toggleRolesMenu()"
+      >
+        <span class="roles-trigger-label" [class.placeholder]="!form.controls.roles.value.length">{{ rolesLabel() }}</span>
+        <span class="roles-caret">▾</span>
+      </button>
+
+      @if (rolesMenuOpen()) {
+        <div class="roles-backdrop" (click)="closeRolesMenu()"></div>
+        <div class="roles-menu" (click)="$event.stopPropagation()">
+          @if (roles().length) {
+            @for (role of roles(); track role.roleCode) {
+              <label class="roles-option">
+                <input type="checkbox" [checked]="isRoleSelected(role.roleCode)" (change)="toggleRole(role.roleCode)" />
+                <span>{{ role.roleName }}</span>
+              </label>
+            }
+          } @else {
+            <p class="roles-empty">No roles available yet.</p>
+          }
+        </div>
+      }
+
+      @if (form.controls.roles.invalid && form.controls.roles.touched) {
+        <span class="field-error">Select at least one role.</span>
+      }
+    </div>
+
+    <label class="field">
+      <span>Password @if (!editingUser()) {<span class="required-mark">*</span>}</span>
+      <div class="password-field">
+        <input
+          [type]="showPassword() ? 'text' : 'password'"
+          formControlName="password"
+          [placeholder]="editingUser() ? 'Leave blank to keep current password' : 'Password'"
+        />
+        <button
+          type="button"
+          class="eye-btn"
+          (click)="showPassword.set(!showPassword())"
+          [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+        >
+          <ng-container *ngTemplateOutlet="showPassword() ? eyeOffIcon : eyeIcon"></ng-container>
+        </button>
+      </div>
+      @if (form.controls.password.invalid && form.controls.password.touched) {
+        @if (form.controls.password.errors?.['required']) {
+          <span class="field-error">Password is required.</span>
+        } @else if (form.controls.password.errors?.['minlength']) {
+          <span class="field-error">Password must be at least 6 characters.</span>
+        }
+      }
+    </label>
+
+    <label class="field">
+      <span>Confirm Password @if (!editingUser()) {<span class="required-mark">*</span>}</span>
+      <div class="password-field">
+        <input
+          [type]="showConfirmPassword() ? 'text' : 'password'"
+          formControlName="confirmPassword"
+          [placeholder]="editingUser() ? 'Leave blank to keep current password' : 'Confirm password'"
+        />
+        <button
+          type="button"
+          class="eye-btn"
+          (click)="showConfirmPassword.set(!showConfirmPassword())"
+          [attr.aria-label]="showConfirmPassword() ? 'Hide password' : 'Show password'"
+        >
+          <ng-container *ngTemplateOutlet="showConfirmPassword() ? eyeOffIcon : eyeIcon"></ng-container>
+        </button>
+      </div>
+      @if (form.controls.confirmPassword.invalid && form.controls.confirmPassword.touched) {
+        <span class="field-error">Confirm Password is required.</span>
+      } @else if (form.errors?.['mismatch'] && form.controls.confirmPassword.touched) {
+        <span class="field-error">Passwords do not match.</span>
+      }
+    </label>
+
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Saving…' : (editingUser() ? 'Update user' : 'Create user') }}
+    </button>
+    @if (editingUser()) {
+      <button type="button" class="btn" (click)="cancelEdit()" [disabled]="saving()">Cancel</button>
+    }
+  </form>
+
+  @if (savedName(); as name) {
+    <div class="banner banner-success">“{{ name }}” saved.</div>
+  }
+  @if (error()) {
+    <div class="banner banner-error">{{ error() }}</div>
+  }
+
+  <div class="list-title-row">
+    <h3 class="list-title">Existing ({{ filteredUsers().length }})</h3>
+    <div class="list-title-controls">
+      <input
+        type="search"
+        class="search-box"
+        placeholder="Search users…"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="onSearchChange($event)"
+        [ngModelOptions]="{ standalone: true }"
+        aria-label="Search users"
+      />
+      <label class="page-size-field">
+        <span>Rows</span>
+        <select
+          [ngModel]="pageSize()"
+          (ngModelChange)="onPageSizeChange($event)"
+          [ngModelOptions]="{ standalone: true }"
+          aria-label="Rows per page"
+        >
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="25">25</option>
+          <option [ngValue]="50">50</option>
+        </select>
+      </label>
+    </div>
+  </div>
+  @if (filteredUsers().length) {
+    <div class="table-scroll">
+      <table class="master-table">
+        <thead>
+          <tr>
+            <th>User Name</th>
+            <th>Account Locked</th>
+            <th>Password Expired</th>
+            <th>First Login</th>
+            <th>Active</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of pagedUsers(); track user.id) {
+            <tr>
+              <td>{{ user.userName }}</td>
+              <td>
+                @if (user.accountLocked) {
+                  <span class="chip chip--success"><span class="chip__dot"></span>Yes</span>
+                } @else {
+                  <span class="chip chip--danger"><span class="chip__dot"></span>No</span>
+                }
+              </td>
+              <td>
+                @if (user.passwordExpired) {
+                  <span class="chip chip--success"><span class="chip__dot"></span>Yes</span>
+                } @else {
+                  <span class="chip chip--danger"><span class="chip__dot"></span>No</span>
+                }
+              </td>
+              <td>
+                @if (user.firstLogin) {
+                  <span class="chip chip--success"><span class="chip__dot"></span>Yes</span>
+                } @else {
+                  <span class="chip chip--danger"><span class="chip__dot"></span>No</span>
+                }
+              </td>
+              <td>
+                @if (user.isActive) {
+                  <span class="chip chip--success"><span class="chip__dot"></span>Active</span>
+                } @else {
+                  <span class="chip chip--danger"><span class="chip__dot"></span>Inactive</span>
+                }
+              </td>
+              <td>
+                <button type="button" class="action-icon-btn" (click)="editUser(user)" title="Edit" aria-label="Edit">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"></path>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button type="button" class="btn btn-ghost btn-sm" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">Previous</button>
+        <div class="page-numbers">
+          @for (p of pageNumbers(); track $index) {
+            @if (p === null) {
+              <span class="page-ellipsis">…</span>
+            } @else {
+              <button type="button" class="page-num-btn" [class.active]="p === currentPage()" (click)="goToPage(p)">{{ p }}</button>
+            }
+          }
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">Next</button>
+      </div>
+    }
+  } @else if (searchTerm().trim()) {
+    <p class="empty-state">No users match “{{ searchTerm() }}”.</p>
+  } @else {
+    <p class="empty-state">No users yet.</p>
+  }
+</div>

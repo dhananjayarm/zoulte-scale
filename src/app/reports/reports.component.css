@@ -1,5 +1,5 @@
 .reports-page {
-  padding: 24px 24px 64px;
+  padding: 24px var(--page-padding-x) 64px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
 }
@@ -136,6 +136,39 @@
 }
 
 .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 56px 24px;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.empty-state-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #f3f4f6;
   color: var(--muted);
-  font-size: 0.9rem;
+}
+
+.empty-state-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.empty-state-text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  max-width: 320px;
 }

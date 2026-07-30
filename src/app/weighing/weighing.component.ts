@@ -10,9 +10,9 @@ import {
 } from '@angular/forms';
 import { ScaleSerialService } from '../services/scale-serial.service';
 import { ReadingStore, type StoredReading } from '../services/readings/reading-store';
+import { MaterialApiService, type ProductRow } from '../services/masters/material-api.service';
 
 const BAUD_RATES = [1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200];
-const RECENT_LIMIT = 10;
 
 const UNIT_WEIGHT_MAP: Record<string, string> = {
   g: 'GRAM',
@@ -27,14 +27,6 @@ function toUnitWeight(unit: string | null): string {
     return 'GRAM';
   }
   return UNIT_WEIGHT_MAP[unit.toLowerCase()] ?? unit.toUpperCase();
-}
-
-function todayIso(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
 }
 
 function expiryAfterManufactureValidator(group: AbstractControl): ValidationErrors | null {
@@ -66,18 +58,21 @@ interface WeighingSession {
 export class WeighingComponent implements OnInit {
   private readonly scale = inject(ScaleSerialService);
   private readonly fb = inject(FormBuilder);
+  private readonly materialApi = inject(MaterialApiService);
   protected readonly store = inject(ReadingStore);
 
   readonly baudRates = BAUD_RATES;
   baudRate = 9600;
 
+  readonly products = signal<ProductRow[]>([]);
+
   readonly sessionForm = this.fb.group(
     {
-      manufacturerName: ['', Validators.required],
       productName: ['', Validators.required],
       batchNumber: ['', Validators.required],
-      manufactureDate: [todayIso(), Validators.required],
-      expiryDate: [todayIso(), Validators.required],
+      manufacturerName: ['', Validators.required],
+      manufactureDate: ['', Validators.required],
+      expiryDate: ['', Validators.required],
     },
     { validators: expiryAfterManufactureValidator }
   );
@@ -90,10 +85,6 @@ export class WeighingComponent implements OnInit {
   readonly saveError = signal<string | null>(null);
   readonly loadError = signal<string | null>(null);
 
-  // Void flow: which recent row is being voided, and the reason being typed.
-  readonly voidingUuid = signal<string | null>(null);
-  voidReason = '';
-
   readonly connectionState = this.scale.connectionState;
   readonly lastError = this.scale.lastError;
   readonly latestReading = this.scale.latestReading;
@@ -104,7 +95,65 @@ export class WeighingComponent implements OnInit {
   readonly isConnecting = computed(() => this.connectionState() === 'connecting');
   readonly isStable = computed(() => this.latestReading()?.stable === true);
 
-  readonly recentCaptures = computed(() => this.readings().slice(0, RECENT_LIMIT));
+  readonly captureSearchTerm = signal('');
+  readonly filteredCaptures = computed(() => {
+    const term = this.captureSearchTerm().trim().toLowerCase();
+    if (!term) {
+      return this.readings();
+    }
+    return this.readings().filter(
+      (r) => r.productName.toLowerCase().includes(term) || r.batchNumber.toLowerCase().includes(term),
+    );
+  });
+
+  readonly capturePageSize = signal(10);
+  readonly captureCurrentPage = signal(1);
+  readonly captureTotalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredCaptures().length / this.capturePageSize())),
+  );
+  readonly recentCaptures = computed(() => {
+    const page = Math.min(this.captureCurrentPage(), this.captureTotalPages());
+    const size = this.capturePageSize();
+    const start = (page - 1) * size;
+    return this.filteredCaptures().slice(start, start + size);
+  });
+
+  onCaptureSearchChange(term: string): void {
+    this.captureSearchTerm.set(term);
+    this.captureCurrentPage.set(1);
+  }
+
+  onCapturePageSizeChange(size: number): void {
+    this.capturePageSize.set(size);
+    this.captureCurrentPage.set(1);
+  }
+
+  goToCapturePage(page: number): void {
+    this.captureCurrentPage.set(Math.min(Math.max(1, page), this.captureTotalPages()));
+  }
+
+  /** Page numbers to render, with `null` standing in for a "…" gap. Always shows first/last and a window around the current page. */
+  readonly capturePageNumbers = computed<(number | null)[]>(() => {
+    const total = this.captureTotalPages();
+    const current = Math.min(this.captureCurrentPage(), total);
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+    const pages: (number | null)[] = [1];
+    if (current > 3) {
+      pages.push(null);
+    }
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+    for (let p = start; p <= end; p++) {
+      pages.push(p);
+    }
+    if (current < total - 2) {
+      pages.push(null);
+    }
+    pages.push(total);
+    return pages;
+  });
 
   /** Running count for the active session's batch — "where was I?" after any interruption. */
   readonly sessionCaptureCount = computed(() => {
@@ -144,6 +193,7 @@ export class WeighingComponent implements OnInit {
 
   ngOnInit(): void {
     void this.loadReadings();
+    this.materialApi.listProducts().subscribe((rows) => this.products.set(rows));
   }
 
   connect(): void {
@@ -196,30 +246,6 @@ export class WeighingComponent implements OnInit {
       this.saveError.set(describeSaveError(err));
     } finally {
       this.isSaving.set(false);
-    }
-  }
-
-  beginVoid(reading: StoredReading): void {
-    this.voidingUuid.set(reading.uuid);
-    this.voidReason = '';
-  }
-
-  cancelVoid(): void {
-    this.voidingUuid.set(null);
-  }
-
-  async confirmVoid(): Promise<void> {
-    const uuid = this.voidingUuid();
-    const reason = this.voidReason.trim();
-    if (!uuid || !reason) {
-      return;
-    }
-    try {
-      await this.store.voidReading(uuid, reason);
-      this.readings.update((readings) => readings.filter((r) => r.uuid !== uuid));
-      this.voidingUuid.set(null);
-    } catch (err) {
-      this.saveError.set(describeSaveError(err));
     }
   }
 

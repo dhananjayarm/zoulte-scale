@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Employees — preview v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    --accent: #2563eb; --accent-hover: #1d4ed8; --accent-tint: #eff6ff;
+    --sidebar-bg: #0f1e2e; --sidebar-text: rgba(255,255,255,.85);
+    --bg: #f4f6f9; --border: #e5e7eb; --text: #1f2937; --muted: #6b7280;
+    --success: #16a34a; --success-tint: #f0fdf4;
+    --warn: #d97706; --warn-tint: #fffbeb;
+    --danger: #dc2626; --danger-tint: #fef2f2;
+    --pending: #6b7280; --pending-tint: #f3f4f6;
+    --surface: #fff; --radius: 10px; --radius-sm: 6px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08);
+    --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+    --page-padding-x: 24px;
+    --font-ui: 'DM Sans','Segoe UI',system-ui,sans-serif;
+    --font-mono: 'DM Mono',Consolas,'Courier New',monospace;
+    margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-ui);
+  }
+  h1,h2,h3,h4 { letter-spacing: -0.01em; margin: 0; }
+  button, input, select { font-family: inherit; }
+
+  .sidebar { width: 220px; background: var(--sidebar-bg); position: fixed; top:0; left:0; height:100vh; padding: 16px 8px 0; }
+  .sb-logo { display:flex; align-items:center; gap:10px; padding:4px 8px 18px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,.08);}
+  .logo-box { width:32px;height:32px;border-radius:9px;background:var(--accent);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;}
+  .logo-text { color:#fff;font-weight:700;font-size:15px;}
+  .sb-sec-label { display:block; color:rgba(255,255,255,.45); font-size:10px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; padding:14px 14px 6px;}
+  .sb-kid { display:block; padding:8px 12px 8px 14px; margin:1px 6px; border-radius:7px; color:var(--sidebar-text); font-size:.9rem; font-weight:600; text-decoration:none;}
+  .sb-kid.active { color:#fff; font-weight:700; background:var(--accent);}
+  .topbar { position:fixed; top:0; left:220px; right:0; height:64px; background:#fff; border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 20px; z-index:10;}
+  .topbar h1 { font-size:1.2rem; flex:1; }
+  .avatar { width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .main { margin-left:220px; padding-top:64px; }
+
+  .setup-page { padding: 20px var(--page-padding-x) 56px; max-width: 980px; }
+  .setup-head h1 { font-size: 1.35rem; margin-bottom: 2px; }
+  .section-hint { margin:0 0 14px; color:var(--muted); font-size:.85rem; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; }
+  .card h2 { font-size:1.05rem; margin-bottom:4px; }
+
+  .required-mark { color:#d33; }
+  .field-error { color:#d33; font-size:.78rem; margin-top:2px; }
+  .create-form { display:flex; gap:12px; align-items:end; flex-wrap:wrap; margin-top: 12px;}
+  .field { display:flex; flex-direction:column; gap:5px; font-size:.82rem; color:var(--muted); }
+  .field.grow { flex:1; min-width:200px; }
+  .field input, .field select { padding:9px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:.92rem; color:var(--text); background:var(--surface); min-width: 160px;}
+  .field input:focus, .field select:focus { outline:none; border-color:var(--accent); box-shadow:var(--focus-ring);}
+  .checkbox-field { flex-direction:row; align-items:center; gap:6px; }
+  .checkbox-field input { width:auto; }
+  .btn { padding:9px 18px; border:none; border-radius:var(--radius-sm); font-size:.9rem; font-weight:600; cursor:pointer; height:40px;}
+  .btn-primary { background:var(--accent); color:#fff;}
+  .btn-primary:hover { background:var(--accent-hover);}
+  .btn-ghost { background:none; color:var(--muted); border:1px solid var(--border); }
+  .input-with-action { display:flex; gap:8px; align-items:center; }
+  .icon-btn { flex-shrink:0; width:34px; height:34px; border:none; border-radius:50%; background:var(--accent); color:#fff; font-size:1.1rem; cursor:pointer; }
+
+  .edit-banner { display:none; margin-top:12px; padding:10px 12px; background:var(--accent-tint); border-radius:var(--radius-sm); font-size:.85rem; color:var(--accent); font-weight:600; align-items:center; justify-content:space-between; }
+  .edit-banner.open { display:flex; }
+
+  .banner { padding:10px 12px; border-radius:var(--radius-sm); font-size:.85rem; margin-top:12px; }
+  .banner-success { background:var(--success-tint); color:var(--success); border:1px solid color-mix(in srgb, var(--success) 25%, transparent); }
+
+  .list-title-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin: 20px 0 8px; flex-wrap: wrap; }
+  .list-title { font-size:.85rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;}
+  .search-box { padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:.85rem; min-width:220px;}
+  .table-scroll { overflow-x:auto; }
+  .master-table { width:100%; border-collapse:collapse; font-size:.88rem; }
+  .master-table th { text-align:left; color:var(--muted); font-weight:600; font-size:.78rem; padding:6px 10px 6px 0; border-bottom:1px solid var(--border);}
+  .master-table td { padding:9px 10px 9px 0; border-bottom:1px solid var(--border);}
+  .chip { display:inline-flex; align-items:center; gap:6px; padding:2px 10px; border-radius:999px; font-size:.75rem; font-weight:600; line-height:1.6; white-space:nowrap; }
+  .chip--success { background:var(--success-tint); color:var(--success); }
+  .chip--pending { background:var(--pending-tint); color:var(--pending); }
+  .chip__dot { width:7px;height:7px;border-radius:50%;background:currentColor; }
+  .action-icon-btn { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--accent); cursor:pointer; }
+  .action-icon-btn:hover { background:var(--accent-tint); border-color:var(--accent); }
+
+  .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:1000; }
+  .modal-backdrop.open { display:flex; }
+  .modal-panel { background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow); width:min(600px,92vw); max-height:88vh; overflow-y:auto; padding:20px; }
+  .modal-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .modal-head h3 { font-size:1.05rem; }
+  .modal-close { border:none; background:none; font-size:1.3rem; color:var(--muted); cursor:pointer; }
+  .modal-intro { margin: 0 0 14px; font-size: .83rem; color: var(--muted); }
+  .modal-body { display:flex; flex-direction:column; gap:12px; }
+  .modal-access-head { display:flex; align-items:center; justify-content:space-between; background:var(--accent-tint); border-radius:var(--radius-sm); padding:8px 12px; margin:16px 0 4px; }
+  .modal-access-head h4 { font-size:.88rem; }
+  .modal-access-hint { margin: 0 0 10px; font-size: .78rem; color: var(--muted); }
+  .btn-sm { padding:6px 12px; font-size:.8rem; height:auto;}
+  .btn-sm:disabled { opacity:.5; cursor:not-allowed; }
+  .access-row { display:flex; gap:12px; align-items:flex-start; margin-bottom:10px; }
+  .access-row .field { flex:1; }
+  .icon-btn-danger { border:none; background:none; color:var(--danger); font-size:1rem; padding:4px 8px; cursor:pointer; align-self:center; }
+  .modal-actions { display:flex; justify-content:space-between; margin-top:16px; }
+  .tooltip-note { font-size: .72rem; color: var(--muted); margin-top: 4px; }
+
+  .ledger { margin-top: 24px; }
+  .ledger summary { cursor:pointer; font-weight:600; font-size:.9rem; color: var(--accent); padding: 10px 0; }
+  .ledger table { width:100%; border-collapse:collapse; font-size:.85rem; margin-top:8px;}
+  .ledger th { text-align:left; background:var(--bg); padding:8px 10px; border-bottom:1px solid var(--border);}
+  .ledger td { padding:8px 10px; border-bottom:1px solid var(--border); vertical-align:top;}
+  .audit-note { background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius-sm); padding:12px 16px; font-size:.85rem; color:#92400e; margin-bottom:12px;}
+  .audit-note.critical { background:#fef2f2; border-color:#fecaca; color:#991b1b; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sb-logo"><span class="logo-box">ZS</span><span class="logo-text">Zoulte Scale</span></div>
+  <nav>
+    <span class="sb-sec-label">Operations</span>
+    <a class="sb-kid">Weighing</a>
+    <a class="sb-kid">Verification</a>
+    <a class="sb-kid">Reports</a>
+    <span class="sb-sec-label">Setup</span>
+    <a class="sb-kid">Categories</a>
+    <a class="sb-kid">Products</a>
+    <a class="sb-kid active">Employees</a>
+    <a class="sb-kid">Users</a>
+  </nav>
+</aside>
+<header class="topbar"><h1>Employees</h1><span class="avatar">RK</span></header>
+
+<div class="main">
+  <div class="setup-page">
+    <div class="audit-note critical">Preview v1 — the page header's claim <em>"Not yet wired to the backend — data here is local to this session"</em> is incorrect (the screen calls real save/list APIs) and has been corrected below.</div>
+    <div class="audit-note">Other additions: an "editing" banner so it's unmistakable which record is being changed, an Active status chip (matching the token vocabulary used elsewhere), and explanatory copy + a guarded "Add More" button in the Department modal.</div>
+
+    <header class="setup-head">
+      <h1>Employees</h1>
+      <p class="section-hint">Operators &amp; verifiers master. <span class="required-mark">*</span> marks required fields.</p>
+    </header>
+
+    <section class="card">
+      <h2>Employees</h2>
+      <p class="section-hint">Name, email, contact number, supervisor and an active flag. <span class="required-mark">*</span> marks required fields.</p>
+
+      <div class="edit-banner" id="editBanner">
+        <span>Editing Priya Sharma</span>
+        <button type="button" class="btn-link" style="background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;" id="cancelEditTop">Cancel</button>
+      </div>
+
+      <form class="create-form">
+        <label class="field grow">
+          <span>Employee name <span class="required-mark">*</span></span>
+          <input type="text" placeholder="e.g. Priya Sharma" />
+        </label>
+        <label class="field grow">
+          <span>Email <span class="required-mark">*</span></span>
+          <input type="email" placeholder="priya.sharma@example.com" />
+        </label>
+        <label class="field">
+          <span>Contact no <span class="required-mark">*</span></span>
+          <input type="text" placeholder="e.g. 9876543210" />
+        </label>
+        <label class="field">
+          <span>Supervisor <span class="required-mark">*</span></span>
+          <select>
+            <option>Choose Supervisor</option>
+            <option>Arjun Mehta</option>
+            <option>Sunita Reddy</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Department <span class="required-mark">*</span></span>
+          <div class="input-with-action">
+            <select>
+              <option>Choose Department</option>
+              <option>Quality Control</option>
+              <option>Warehouse</option>
+              <option>Packaging</option>
+            </select>
+            <button type="button" class="icon-btn" title="Add department" id="openDeptModal">+</button>
+          </div>
+        </label>
+        <label class="field checkbox-field">
+          <input type="checkbox" checked />
+          <span>Active</span>
+        </label>
+        <button type="submit" class="btn btn-primary" id="submitBtn">Add employee</button>
+        <button type="button" class="btn btn-ghost" style="display:none" id="cancelEditBottom">Cancel</button>
+      </form>
+
+      <div class="banner banner-success" style="display:none">"Priya Sharma" added.</div>
+
+      <div class="list-title-row">
+        <span class="list-title">Existing (5)</span>
+        <input type="search" class="search-box" placeholder="Search employees…" />
+      </div>
+      <div class="table-scroll">
+        <table class="master-table">
+          <thead>
+            <tr><th>Name</th><th>Email</th><th>Contact no</th><th>Supervisor</th><th>Department</th><th>Active</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Priya Sharma</td><td>priya.sharma@example.com</td><td>9876543210</td><td>Arjun Mehta</td><td>Quality Control</td>
+              <td><span class="chip chip--success"><span class="chip__dot"></span>Active</span></td>
+              <td><button class="action-icon-btn" title="Edit" onclick="document.getElementById('editBanner').classList.add('open');document.getElementById('submitBtn').textContent='Update employee';document.getElementById('cancelEditBottom').style.display='inline-block';">✎</button></td>
+            </tr>
+            <tr>
+              <td>Ramesh Iyer</td><td>ramesh.iyer@example.com</td><td>9823456710</td><td>Arjun Mehta</td><td>Warehouse</td>
+              <td><span class="chip chip--success"><span class="chip__dot"></span>Active</span></td>
+              <td><button class="action-icon-btn" title="Edit">✎</button></td>
+            </tr>
+            <tr>
+              <td>Sunita Reddy</td><td>sunita.reddy@example.com</td><td>9812345678</td><td>—</td><td>Quality Control</td>
+              <td><span class="chip chip--success"><span class="chip__dot"></span>Active</span></td>
+              <td><button class="action-icon-btn" title="Edit">✎</button></td>
+            </tr>
+            <tr>
+              <td>Vikram Nair</td><td>vikram.nair@example.com</td><td>9845098450</td><td>Sunita Reddy</td><td>Packaging</td>
+              <td><span class="chip chip--pending"><span class="chip__dot"></span>Inactive</span></td>
+              <td><button class="action-icon-btn" title="Edit">✎</button></td>
+            </tr>
+            <tr>
+              <td>Anjali Deshpande</td><td>anjali.d@example.com</td><td>9900112233</td><td>Sunita Reddy</td><td>Warehouse</td>
+              <td><span class="chip chip--success"><span class="chip__dot"></span>Active</span></td>
+              <td><button class="action-icon-btn" title="Edit">✎</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <details class="ledger">
+      <summary>Implementation-cost ledger</summary>
+      <table>
+        <thead><tr><th>Existing components</th><th>CSS-only</th><th>New shared components</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Create form, table, modal shell — all unchanged shell primitives.</td>
+            <td>Header copy correction (one string). New `.edit-banner` shown when `editingCode()` is set — pure template addition bound to the signal that already exists. Active column swapped from text to the app's existing `.chip` component (template-only). Modal gets two new `<p class="modal-intro">` / `.modal-access-hint` copy lines, and "+ Add More" gets `[disabled]="!lastRowComplete()"` plus a `.tooltip-note` — `lastRowComplete` is a one-line computed signal over the existing `deptAccessRows()`.</td>
+            <td>None.</td>
+          </tr>
+        </tbody>
+      </table>
+    </details>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="deptModalBackdrop">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <h3>Department</h3>
+      <button type="button" class="modal-close" id="closeDeptModal">&times;</button>
+    </div>
+    <p class="modal-intro">Departments group employees for supervisor/reporting structure and access control. Every department needs at least one person with access below before it can be created.</p>
+
+    <form class="modal-body">
+      <label class="field">
+        <span>Department <span class="required-mark">*</span></span>
+        <input type="text" placeholder="e.g. QC-LAB" />
+      </label>
+      <label class="field">
+        <span>Department Name <span class="required-mark">*</span></span>
+        <input type="text" placeholder="e.g. Quality Control Laboratory" />
+      </label>
+      <label class="field checkbox-field">
+        <input type="checkbox" checked />
+        <span>Active</span>
+      </label>
+    </form>
+
+    <div class="modal-access-head">
+      <h4>Department access <span class="required-mark">*</span> — at least one</h4>
+      <button type="button" class="btn btn-primary btn-sm" id="addAccessRow" disabled>+ Add More</button>
+    </div>
+    <p class="modal-access-hint">Each row grants one user a role within this department — they'll see records tagged with it accordingly. Fill in the row below, then add more if several people need access.</p>
+
+    <div class="access-row">
+      <label class="field">
+        <span>Role Code <span class="required-mark">*</span></span>
+        <select id="roleSel">
+          <option value="">-</option>
+          <option>Owners</option>
+          <option>Managers</option>
+          <option>Users</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>User Name <span class="required-mark">*</span></span>
+        <select id="userSel">
+          <option value="">-</option>
+          <option>priya.sharma</option>
+          <option>ramesh.iyer</option>
+        </select>
+      </label>
+    </div>
+    <p class="tooltip-note" id="addMoreHint">Choose a role and user above to add another row.</p>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="cancelDeptModal">Cancel</button>
+      <button type="button" class="btn btn-primary">Create</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const backdrop = document.getElementById('deptModalBackdrop');
+  document.getElementById('openDeptModal').addEventListener('click', () => backdrop.classList.add('open'));
+  document.getElementById('closeDeptModal').addEventListener('click', () => backdrop.classList.remove('open'));
+  document.getElementById('cancelDeptModal').addEventListener('click', () => backdrop.classList.remove('open'));
+
+  function refreshAddMore() {
+    const complete = document.getElementById('roleSel').value && document.getElementById('userSel').value;
+    document.getElementById('addAccessRow').disabled = !complete;
+    document.getElementById('addMoreHint').style.display = complete ? 'none' : 'block';
+  }
+  document.getElementById('roleSel').addEventListener('change', refreshAddMore);
+  document.getElementById('userSel').addEventListener('change', refreshAddMore);
+
+  document.getElementById('cancelEditTop').addEventListener('click', () => {
+    document.getElementById('editBanner').classList.remove('open');
+    document.getElementById('submitBtn').textContent = 'Add employee';
+    document.getElementById('cancelEditBottom').style.display = 'none';
+  });
+  document.getElementById('cancelEditBottom').addEventListener('click', () => {
+    document.getElementById('editBanner').classList.remove('open');
+    document.getElementById('submitBtn').textContent = 'Add employee';
+    document.getElementById('cancelEditBottom').style.display = 'none';
+  });
+</script>
+</body>
+</html>

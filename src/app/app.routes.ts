@@ -17,6 +17,12 @@ export const routes: Routes = [
       import('./weighing/weighing.component').then((m) => m.WeighingComponent),
   },
   {
+    path: 'verification',
+    canActivate: [authGuard, onlineOnlyGuard],
+    loadComponent: () =>
+      import('./verification/verification.component').then((m) => m.VerificationComponent),
+  },
+  {
     path: 'reports',
     canActivate: [authGuard, onlineOnlyGuard],
     loadComponent: () =>
@@ -46,6 +52,18 @@ export const routes: Routes = [
     canActivate: [authGuard, onlineOnlyGuard],
     loadComponent: () =>
       import('./setup/product-setup.component').then((m) => m.ProductSetupComponent),
+  },
+  {
+    path: 'setup/employee',
+    canActivate: [authGuard, onlineOnlyGuard],
+    loadComponent: () =>
+      import('./setup/employee-setup.component').then((m) => m.EmployeeSetupComponent),
+  },
+  {
+    path: 'setup/users',
+    canActivate: [authGuard, onlineOnlyGuard],
+    loadComponent: () =>
+      import('./setup/user-setup.component').then((m) => m.UserSetupComponent),
   },
   { path: '', pathMatch: 'full', redirectTo: 'weightscale' },
   { path: '**', pathMatch: 'full', redirectTo: 'weightscale' },

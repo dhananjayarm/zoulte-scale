@@ -59,13 +59,24 @@
             </span>
             <span class="report-text">
               <span class="report-title">{{ card.item.name }}</span>
-              <span class="report-desc">{{ card.item.description ?? card.item.name }}</span>
+              <span class="report-desc">{{ card.description }}</span>
             </span>
           </a>
         }
       </div>
     } @else {
-      <p class="empty-state">No reports available.</p>
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 8v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8"></path>
+            <path d="M21 8l-3-5H6L3 8"></path>
+            <path d="M3 8h18"></path>
+            <path d="M9 12h6"></path>
+          </svg>
+        </div>
+        <h3 class="empty-state-title">No reports available</h3>
+        <p class="empty-state-text">Reports will appear here once they are configured for your account.</p>
+      </div>
     }
   }
 </div>

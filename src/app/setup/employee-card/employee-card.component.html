@@ -1,0 +1,278 @@
+<div class="card">
+  <h2>Employees</h2>
+  <p class="section-hint">Name, email, contact number, supervisor and an active flag. <span class="required-mark">*</span> marks required fields.</p>
+
+  @if (editingEmployeeName(); as name) {
+    <div class="edit-banner">
+      <span>Editing {{ name }}</span>
+      <button type="button" class="btn-link" (click)="cancelEdit()">Cancel</button>
+    </div>
+  }
+
+  <form class="create-form" [formGroup]="form" (ngSubmit)="save()">
+    <label class="field grow">
+      <span>Employee name <span class="required-mark">*</span></span>
+      <input type="text" formControlName="employeeName" placeholder="e.g. Jane Doe" />
+      @if (form.controls.employeeName.invalid && form.controls.employeeName.touched) {
+        <span class="field-error">Employee name is required.</span>
+      }
+    </label>
+
+    <label class="field grow">
+      <span>Email <span class="required-mark">*</span></span>
+      <input type="email" formControlName="email" placeholder="jane@example.com" />
+      @if (form.controls.email.invalid && form.controls.email.touched) {
+        @if (form.controls.email.errors?.['required']) {
+          <span class="field-error">Email is required.</span>
+        } @else if (form.controls.email.errors?.['email']) {
+          <span class="field-error">Enter a valid email address.</span>
+        }
+      }
+    </label>
+
+    <label class="field">
+      <span>Contact no <span class="required-mark">*</span></span>
+      <input type="text" formControlName="contactNo" placeholder="e.g. 9876543210" />
+      @if (form.controls.contactNo.invalid && form.controls.contactNo.touched) {
+        @if (form.controls.contactNo.errors?.['required']) {
+          <span class="field-error">Contact no is required.</span>
+        } @else if (form.controls.contactNo.errors?.['pattern']) {
+          <span class="field-error">Enter a valid 7-15 digit contact number.</span>
+        }
+      }
+    </label>
+
+    <label class="field">
+      <span>Supervisor <span class="required-mark">*</span></span>
+      <select formControlName="supervisorId">
+        <option value="">Choose Supervisor</option>
+        @for (sup of supervisors(); track sup.employeeCode) {
+          <option [value]="sup.employeeCode">{{ sup.employeeName }}</option>
+        }
+      </select>
+      @if (form.controls.supervisorId.invalid && form.controls.supervisorId.touched) {
+        <span class="field-error">Supervisor is required.</span>
+      }
+    </label>
+
+    <label class="field">
+      <span>Department <span class="required-mark">*</span></span>
+      <div class="input-with-action">
+        <select formControlName="deptCode">
+          <option value="">Choose Department</option>
+          @for (dept of depts(); track dept.deptCode) {
+            <option [value]="dept.deptCode">{{ dept.deptName }}</option>
+          }
+        </select>
+        <button type="button" class="icon-btn" (click)="openDeptModal()" title="Add department">+</button>
+      </div>
+      @if (form.controls.deptCode.invalid && form.controls.deptCode.touched) {
+        <span class="field-error">Department is required.</span>
+      }
+    </label>
+
+    <label class="field checkbox-field">
+      <input type="checkbox" formControlName="isActive" />
+      <span>Active</span>
+    </label>
+
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Saving…' : (editingCode() ? 'Update employee' : 'Add employee') }}
+    </button>
+    @if (editingCode()) {
+      <button type="button" class="btn" (click)="cancelEdit()" [disabled]="saving()">Cancel</button>
+    }
+  </form>
+
+  @if (savedName(); as name) {
+    <div class="banner banner-success">“{{ name }}” added.</div>
+  }
+  @if (error()) {
+    <div class="banner banner-error">{{ error() }}</div>
+  }
+
+  <div class="list-title-row">
+    <h3 class="list-title">Existing ({{ filteredEmployees().length }})</h3>
+    <div class="list-title-controls">
+      <input
+        type="search"
+        class="search-box"
+        placeholder="Search employees…"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="onSearchChange($event)"
+        [ngModelOptions]="{ standalone: true }"
+        aria-label="Search employees"
+      />
+      <label class="page-size-field">
+        <span>Rows</span>
+        <select
+          [ngModel]="pageSize()"
+          (ngModelChange)="onPageSizeChange($event)"
+          [ngModelOptions]="{ standalone: true }"
+          aria-label="Rows per page"
+        >
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="25">25</option>
+          <option [ngValue]="50">50</option>
+        </select>
+      </label>
+    </div>
+  </div>
+  @if (filteredEmployees().length) {
+    <div class="table-scroll">
+      <table class="master-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Contact no</th>
+            <th>Supervisor</th>
+            <th>Department</th>
+            <th>Active</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (emp of pagedEmployees(); track emp.id) {
+            <tr>
+              <td>{{ emp.employeeName }}</td>
+              <td>{{ emp.email }}</td>
+              <td>{{ emp.contactNo }}</td>
+              <td>{{ supervisorName()(emp.supervisorId) }}</td>
+              <td>{{ deptName()(emp.deptCode) }}</td>
+              <td>
+                @if (emp.isActive) {
+                  <span class="chip chip--success"><span class="chip__dot"></span>Active</span>
+                } @else {
+                  <span class="chip chip--pending"><span class="chip__dot"></span>Inactive</span>
+                }
+              </td>
+              <td>
+                <button type="button" class="action-icon-btn" (click)="startEdit(emp)" title="Edit" aria-label="Edit">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"></path>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button type="button" class="btn btn-ghost btn-sm" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">Previous</button>
+        <div class="page-numbers">
+          @for (p of pageNumbers(); track $index) {
+            @if (p === null) {
+              <span class="page-ellipsis">…</span>
+            } @else {
+              <button type="button" class="page-num-btn" [class.active]="p === currentPage()" (click)="goToPage(p)">{{ p }}</button>
+            }
+          }
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">Next</button>
+      </div>
+    }
+  } @else if (searchTerm().trim()) {
+    <p class="empty-state">No employees match “{{ searchTerm() }}”.</p>
+  } @else {
+    <p class="empty-state">No employees yet.</p>
+  }
+
+  @if (showDeptModal()) {
+    <div class="modal-backdrop" (click)="closeDeptModal()">
+      <div class="modal-panel" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h3>Department</h3>
+          <button type="button" class="modal-close" (click)="closeDeptModal()" aria-label="Close">&times;</button>
+        </div>
+        <p class="modal-intro">Departments group employees for supervisor/reporting structure and access control. Every department needs at least one person with access below before it can be created.</p>
+
+        <form [formGroup]="deptForm" class="modal-body">
+          <label class="field">
+            <span>Department <span class="required-mark">*</span></span>
+            <input type="text" formControlName="deptCode" placeholder="e.g. IT-BE" />
+            @if (deptForm.controls.deptCode.invalid && deptForm.controls.deptCode.touched) {
+              <span class="field-error">Department code is required.</span>
+            }
+          </label>
+
+          <label class="field">
+            <span>Department Name <span class="required-mark">*</span></span>
+            <input type="text" formControlName="deptName" placeholder="e.g. Information Technology" />
+            @if (deptForm.controls.deptName.invalid && deptForm.controls.deptName.touched) {
+              <span class="field-error">Department name is required.</span>
+            }
+          </label>
+
+          <label class="field checkbox-field">
+            <input type="checkbox" formControlName="isActive" />
+            <span>Active</span>
+          </label>
+        </form>
+
+        <div class="modal-access-head">
+          <h4>Department access <span class="required-mark">*</span> — at least one</h4>
+          <button type="button" class="btn btn-primary btn-sm" [disabled]="lastDeptAccessRowIncomplete()" (click)="addDeptAccessRow()">+ Add More</button>
+        </div>
+        <p class="modal-access-hint">Each row grants one user a role within this department — they'll see records tagged with it accordingly. Fill in the row below, then add more if several people need access.</p>
+
+        @for (row of deptAccessRows(); track $index) {
+          <div class="access-row">
+            <label class="field">
+              <span>Role Code <span class="required-mark">*</span></span>
+              <select
+                [ngModel]="row.roleCode"
+                (ngModelChange)="updateDeptAccessRow($index, { roleCode: $event })"
+                [ngModelOptions]="{ standalone: true }"
+              >
+                <option [ngValue]="null">-</option>
+                @for (role of roleTypes; track role) {
+                  <option [value]="role">{{ role }}</option>
+                }
+              </select>
+              @if (!row.roleCode) {
+                <span class="field-error">Role Code is required.</span>
+              }
+            </label>
+
+            <label class="field">
+              <span>User Name <span class="required-mark">*</span></span>
+              <select
+                [ngModel]="row.userName"
+                (ngModelChange)="updateDeptAccessRow($index, { userName: $event })"
+                [ngModelOptions]="{ standalone: true }"
+              >
+                <option [ngValue]="null">-</option>
+                @for (user of deptUserNames(); track user) {
+                  <option [value]="user">{{ user }}</option>
+                }
+              </select>
+              @if (!row.userName) {
+                <span class="field-error">User Name is required.</span>
+              }
+            </label>
+
+            <button type="button" class="icon-btn-danger" (click)="removeDeptAccessRow($index)" title="Remove">🗑</button>
+          </div>
+        }
+        @if (lastDeptAccessRowIncomplete()) {
+          <p class="tooltip-note">Choose a role and user above to add another row.</p>
+        }
+
+        @if (deptError()) {
+          <div class="banner banner-error">{{ deptError() }}</div>
+        }
+
+        <div class="modal-actions">
+          <button type="button" class="btn" (click)="closeDeptModal()">Cancel</button>
+          <button type="button" class="btn btn-primary" [disabled]="deptSaving()" (click)="createDepartment()">
+            {{ deptSaving() ? 'Saving…' : 'Create' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

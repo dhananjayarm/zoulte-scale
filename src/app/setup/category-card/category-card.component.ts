@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SetupFacade } from '../setup.facade';
 import { deriveCode } from '../../services/masters/material-api.service';
 
@@ -9,7 +9,7 @@ import { deriveCode } from '../../services/masters/material-api.service';
 @Component({
   selector: 'app-category-card',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './category-card.component.html',
   styleUrl: './category-card.component.css',
@@ -25,6 +25,64 @@ export class CategoryCardComponent {
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
   readonly savedName = signal<string | null>(null);
+  private savedNameTimeout?: ReturnType<typeof setTimeout>;
+
+  readonly searchTerm = signal('');
+  readonly filteredCategories = computed(() => {
+    const term = this.searchTerm().trim().toLowerCase();
+    const categories = this.facade.categories();
+    if (!term) {
+      return categories;
+    }
+    return categories.filter((cat) => (cat.categoryName || cat.categoryCode).toLowerCase().includes(term));
+  });
+
+  readonly pageSize = signal(10);
+  readonly currentPage = signal(1);
+  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.filteredCategories().length / this.pageSize())));
+  readonly pagedCategories = computed(() => {
+    const page = Math.min(this.currentPage(), this.totalPages());
+    const size = this.pageSize();
+    const start = (page - 1) * size;
+    return this.filteredCategories().slice(start, start + size);
+  });
+
+  onSearchChange(term: string): void {
+    this.searchTerm.set(term);
+    this.currentPage.set(1);
+  }
+
+  onPageSizeChange(size: number): void {
+    this.pageSize.set(size);
+    this.currentPage.set(1);
+  }
+
+  goToPage(page: number): void {
+    this.currentPage.set(Math.min(Math.max(1, page), this.totalPages()));
+  }
+
+  /** Page numbers to render, with `null` standing in for a "…" gap. Always shows first/last and a window around the current page. */
+  readonly pageNumbers = computed<(number | null)[]>(() => {
+    const total = this.totalPages();
+    const current = Math.min(this.currentPage(), total);
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+    const pages: (number | null)[] = [1];
+    if (current > 3) {
+      pages.push(null);
+    }
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+    for (let p = start; p <= end; p++) {
+      pages.push(p);
+    }
+    if (current < total - 2) {
+      pages.push(null);
+    }
+    pages.push(total);
+    return pages;
+  });
 
   async save(): Promise<void> {
     if (this.saving()) {
@@ -47,6 +105,8 @@ export class CategoryCardComponent {
       });
       this.savedName.set(name);
       this.form.reset({ categoryName: '' });
+      clearTimeout(this.savedNameTimeout);
+      this.savedNameTimeout = setTimeout(() => this.savedName.set(null), 4000);
     } catch (err) {
       this.error.set(describeError(err));
     } finally {

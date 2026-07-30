@@ -23,6 +23,18 @@ function resolveIconKey(icon: string | null): IconKey {
   return 'document';
 }
 
+// Temporary frontend fallback — menuaccess sends description: null for these
+// today. Remove once the backend sets a real description on the menu row.
+const REPORT_DESCRIPTIONS: Record<string, string> = {
+  'reports/productreport': 'Product-wise weighing and batch history.',
+  'reports/expiryreport': 'Track batches nearing or past their expiry date.',
+};
+
+function resolveDescription(item: MenuItem): string {
+  const link = (item.link ?? '').replace(/^\//, '').toLowerCase();
+  return item.description || REPORT_DESCRIPTIONS[link] || item.name;
+}
+
 const CARD_COLORS = ['orange', 'blue', 'yellow', 'purple', 'green', 'red'] as const;
 type CardColor = (typeof CARD_COLORS)[number];
 
@@ -30,6 +42,7 @@ export interface ReportCard {
   item: MenuItem;
   iconKey: IconKey;
   color: CardColor;
+  description: string;
 }
 
 @Component({
@@ -54,6 +67,7 @@ export class ReportsComponent implements OnInit {
             item,
             iconKey: resolveIconKey(item.icon),
             color: CARD_COLORS[index % CARD_COLORS.length],
+            description: resolveDescription(item),
           }))
         );
         this.isLoading.set(false);

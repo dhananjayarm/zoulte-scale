@@ -76,8 +76,7 @@ export class MenuService {
   }
 
   private isReportItem(item: MenuItem): boolean {
-    const header = item.header?.toLowerCase() ?? '';
     const category = item.category?.toLowerCase() ?? '';
-    return item.menuType === 'REPORT' || header.includes('report') || category.includes('report');
+    return item.menuType === 'REPORT' || category.includes('report');
   }
 }

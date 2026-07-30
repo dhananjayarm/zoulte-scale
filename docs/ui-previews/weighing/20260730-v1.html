@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Weighing — preview v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    --accent: #2563eb; --accent-hover: #1d4ed8; --accent-tint: #eff6ff;
+    --sidebar-bg: #0f1e2e; --sidebar-text: rgba(255,255,255,.85); --sidebar-text-active: #fff;
+    --bg: #f4f6f9; --border: #e5e7eb; --text: #1f2937; --muted: #6b7280;
+    --success: #16a34a; --success-tint: #f0fdf4;
+    --warn: #d97706; --warn-tint: #fffbeb;
+    --danger: #dc2626; --danger-tint: #fef2f2;
+    --pending: #6b7280; --pending-tint: #f3f4f6;
+    --surface: #fff; --radius: 10px; --radius-sm: 6px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08);
+    --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+    --page-padding-x: 24px;
+    --font-ui: 'DM Sans','Segoe UI',system-ui,sans-serif;
+    --font-mono: 'DM Mono',Consolas,'Courier New',monospace;
+    margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-ui);
+  }
+  h1,h2,h3 { letter-spacing: -0.01em; margin: 0; }
+  button, input, select { font-family: inherit; }
+
+  /* ── chrome (minimal, for context only) ───────────────────────────── */
+  .sidebar { width: 220px; background: var(--sidebar-bg); position: fixed; top:0; left:0; height:100vh; padding: 16px 8px 0; }
+  .sb-logo { display:flex; align-items:center; gap:10px; padding:4px 8px 18px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,.08);}
+  .logo-box { width:32px;height:32px;border-radius:9px;background:var(--accent);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;}
+  .logo-text { color:#fff;font-weight:700;font-size:15px;}
+  .sb-sec-label { display:block; color:rgba(255,255,255,.45); font-size:10px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; padding:14px 14px 6px;}
+  .sb-kid { display:block; padding:8px 12px 8px 14px; margin:1px 6px; border-radius:7px; color:var(--sidebar-text); font-size:.9rem; font-weight:600; text-decoration:none;}
+  .sb-kid.active { color:#fff; font-weight:700; background:var(--accent);}
+  .topbar { position:fixed; top:0; left:220px; right:0; height:64px; background:#fff; border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 20px; z-index:10;}
+  .topbar h1 { font-size:1.2rem; flex:1; }
+  .avatar { width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .main { margin-left:220px; padding-top:64px; }
+
+  /* ── screen ────────────────────────────────────────────────────────── */
+  .station { padding: 20px var(--page-padding-x) 56px; display:flex; flex-direction:column; gap:16px; max-width: 880px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; }
+  .card h2 { font-size:1.05rem; margin-bottom:4px; }
+  .section-hint { margin:0 0 14px; color:var(--muted); font-size:.85rem; }
+
+  .chip { display:inline-flex; align-items:center; gap:6px; padding:2px 10px; border-radius:999px; font-size:.75rem; font-weight:600; line-height:1.6; white-space:nowrap; }
+  .chip--success { background:var(--success-tint); color:var(--success); }
+  .chip--warn { background:var(--warn-tint); color:var(--warn); }
+  .chip--pending { background:var(--pending-tint); color:var(--pending); }
+  .chip__dot { width:7px;height:7px;border-radius:50%;background:currentColor; }
+
+  .btn { padding:9px 18px; border:none; border-radius:var(--radius-sm); font-size:.9rem; font-weight:600; cursor:pointer; }
+  .btn:disabled { opacity:.55; cursor:not-allowed; }
+  .btn-primary { background:var(--accent); color:#fff; }
+  .btn-primary:hover:not(:disabled) { background:var(--accent-hover); }
+  .btn-secondary { background:var(--accent-tint); color:var(--accent); }
+  .btn-ghost { background:none; color:var(--muted); border:1px solid var(--border); }
+  .btn-danger { background:var(--danger); color:#fff; }
+  .banner { padding:10px 12px; border-radius:var(--radius-sm); font-size:.85rem; margin-top:12px; }
+  .banner-warn { background:var(--warn-tint); color:var(--warn); border:1px solid color-mix(in srgb, var(--warn) 30%, transparent); }
+
+  /* session card */
+  .session-locked { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .session-title-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .session-product { font-size:1.15rem; }
+  .batch-tag { display:inline-flex; align-items:center; gap:5px; padding:2px 10px; border-radius:999px; font-size:.78rem; font-weight:700; background:var(--accent-tint); color:var(--accent); font-family:var(--font-mono); }
+  .session-meta { margin:4px 0 0; color:var(--muted); font-size:.85rem; }
+  .session-actions { display:flex; align-items:center; gap:14px; }
+  .stat { text-align:center; padding:4px 14px; background:var(--accent-tint); border-radius:var(--radius-sm); min-width:76px; }
+  .stat-value { display:block; font-family:var(--font-mono); font-size:1.3rem; font-weight:600; color:var(--accent); line-height:1.2; }
+  .stat-label { font-size:.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+
+  /* readout */
+  .readout-card { text-align:center; position:relative; }
+  .readout-top { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .connection-controls { display:flex; align-items:center; gap:10px; }
+  .port-info { color:var(--muted); font-size:.75rem; }
+  .readout { margin:22px 0 6px; display:flex; align-items:baseline; justify-content:center; gap:10px; font-family:var(--font-mono); font-variant-numeric:tabular-nums; }
+  .readout-value { font-size:clamp(3.5rem,10vw,6rem); font-weight:700; line-height:1; letter-spacing:-.02em; color:var(--success); transition: color .15s ease; }
+  .readout-unit { font-size:1.6rem; color:var(--muted); font-weight:600; }
+  .readout-state { min-height:26px; display:flex; justify-content:center; margin-bottom:14px; }
+  .btn-capture { width:min(360px,100%); padding:16px; border:none; border-radius:var(--radius); background:var(--accent); color:#fff; font-size:1.2rem; font-weight:700; letter-spacing:.02em; cursor:pointer; box-shadow:var(--shadow); transition: transform .08s ease, background .15s ease; }
+  .btn-capture:hover { background:var(--accent-hover); }
+  .btn-capture:active { transform: scale(.98); }
+  .capture-hint { margin:8px 0 0; color:var(--muted); font-size:.82rem; }
+  .kbd-hint { display:inline-flex; align-items:center; gap:5px; }
+  kbd { font-family:var(--font-mono); font-size:.72rem; background:var(--bg); border:1px solid var(--border); border-bottom-width:2px; border-radius:4px; padding:1px 6px; color:var(--text); }
+  .flash { position:absolute; inset:0; border-radius:var(--radius); pointer-events:none; background:var(--success-tint); opacity:0; }
+  .flash.go { animation: flashfade .5s ease; }
+  @keyframes flashfade { 0% { opacity:.9; } 100% { opacity:0; } }
+
+  /* recent */
+  .recent-head { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:8px; }
+  .recent-note { color:var(--muted); font-size:.75rem; }
+  .recent-list { list-style:none; margin:0; padding:0; }
+  .recent-row { border-top:1px solid var(--border); padding:10px 0; }
+  .recent-main { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .recent-weight { font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-weight:500; font-size:1.02rem; min-width:96px; }
+  .recent-weight small { color:var(--muted); font-weight:600; }
+  .recent-product { flex:1; font-size:.88rem; min-width:160px; }
+  .recent-time { color:var(--muted); font-size:.8rem; font-family:var(--font-mono); }
+  .btn-void { border:none; background:none; color:var(--danger); font-size:.8rem; font-weight:600; cursor:pointer; padding:4px 8px; border-radius:var(--radius-sm); }
+  .btn-void:hover { background:var(--danger-tint); }
+  .void-confirm { display:none; margin-top:10px; padding:10px; background:var(--danger-tint); border-radius:var(--radius-sm); }
+  .void-confirm.open { display:block; }
+  .void-warn { margin:0 0 8px; font-size:.8rem; color:var(--danger); font-weight:500; }
+  .void-row { display:flex; gap:8px; flex-wrap:wrap; }
+  .void-reason { flex:1; min-width:220px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:.85rem; }
+
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+  .ledger { margin-top: 8px; }
+  .ledger summary { cursor:pointer; font-weight:600; font-size:.9rem; color: var(--accent); padding: 10px 0; }
+  .ledger table { width:100%; border-collapse:collapse; font-size:.85rem; margin-top:8px;}
+  .ledger th { text-align:left; background:var(--bg); padding:8px 10px; border-bottom:1px solid var(--border);}
+  .ledger td { padding:8px 10px; border-bottom:1px solid var(--border); vertical-align:top;}
+  .audit-note { max-width:880px; background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius-sm); padding:12px 16px; font-size:.85rem; color:#92400e; margin-bottom:4px;}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sb-logo"><span class="logo-box">ZS</span><span class="logo-text">Zoulte Scale</span></div>
+  <nav>
+    <span class="sb-sec-label">Operations</span>
+    <a class="sb-kid active">Weighing</a>
+    <a class="sb-kid">Verification</a>
+    <a class="sb-kid">Reports</a>
+    <span class="sb-sec-label">Setup</span>
+    <a class="sb-kid">Categories</a>
+    <a class="sb-kid">Products</a>
+    <a class="sb-kid">Employees</a>
+    <a class="sb-kid">Users</a>
+  </nav>
+</aside>
+<header class="topbar"><h1>Weighing</h1><span class="avatar">RK</span></header>
+
+<div class="main">
+  <div class="station" style="padding-top:20px;">
+
+    <div class="audit-note">Preview v1 — additions over the current screen are marked inline: running batch weight, Space-to-capture, and void consequence copy. Everything else (fields, states, tokens) matches the shipped screen.</div>
+
+    <!-- Session card -->
+    <section class="card">
+      <div class="session-locked">
+        <div>
+          <div class="session-title-row">
+            <h2 class="session-product">Paracetamol 500mg Tablets</h2>
+            <span class="batch-tag">Batch B-2026-0713</span>
+          </div>
+          <p class="session-meta">Cipla Ltd. · Mfg 01-Jun-2026 · Exp 31-May-2028</p>
+        </div>
+        <div class="session-actions">
+          <div class="stat">
+            <span class="stat-value">18</span>
+            <span class="stat-label">captures</span>
+          </div>
+          <div class="stat" title="New — sum of every capture in this session">
+            <span class="stat-value">4.512 <small style="font-size:.8rem;">kg</small></span>
+            <span class="stat-label">batch total</span>
+          </div>
+          <button type="button" class="btn btn-secondary">Change product / batch</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Readout -->
+    <section class="card readout-card">
+      <div class="flash" id="flash"></div>
+      <div class="readout-top">
+        <div class="connection-controls">
+          <span class="chip chip--success"><span class="chip__dot"></span>Scale connected</span>
+          <button class="btn btn-ghost">Disconnect</button>
+        </div>
+        <span class="port-info">vendor 0x0483 · product 0xa27e</span>
+      </div>
+
+      <div class="readout">
+        <span class="readout-value" id="readoutValue" aria-live="polite">250.4</span>
+        <span class="readout-unit">g</span>
+      </div>
+      <div class="readout-state">
+        <span class="chip chip--success"><span class="chip__dot"></span>Stable</span>
+      </div>
+
+      <button type="button" class="btn-capture" id="captureBtn">Capture</button>
+      <p class="capture-hint">
+        <span class="kbd-hint">Press <kbd>Space</kbd> to capture without reaching for the screen</span>
+      </p>
+      <span class="sr-only" aria-live="polite" id="captureAnnounce"></span>
+    </section>
+
+    <!-- Recent -->
+    <section class="card">
+      <div class="recent-head">
+        <h2>Recent captures</h2>
+        <span class="recent-note">Full history and search live in Reports</span>
+      </div>
+      <ul class="recent-list">
+        <li class="recent-row">
+          <div class="recent-main">
+            <span class="recent-weight">250.4 <small>g</small></span>
+            <span class="recent-product">Paracetamol 500mg Tablets · B-2026-0713</span>
+            <span class="recent-time">11:42:07</span>
+            <span class="chip chip--success"><span class="chip__dot"></span>Synced</span>
+            <button type="button" class="btn-void" data-void="1">Void</button>
+          </div>
+          <div class="void-confirm" data-panel="1">
+            <p class="void-warn">This removes the reading from the batch record. This can't be undone.</p>
+            <div class="void-row">
+              <input type="text" class="void-reason" placeholder="reason for voiding (required)" aria-label="Reason for voiding this reading" />
+              <button type="button" class="btn btn-danger">Void reading</button>
+              <button type="button" class="btn btn-ghost" data-cancel="1">Cancel</button>
+            </div>
+          </div>
+        </li>
+        <li class="recent-row">
+          <div class="recent-main">
+            <span class="recent-weight">249.9 <small>g</small></span>
+            <span class="recent-product">Paracetamol 500mg Tablets · B-2026-0713</span>
+            <span class="recent-time">11:41:52</span>
+            <span class="chip chip--success"><span class="chip__dot"></span>Synced</span>
+            <button type="button" class="btn-void" data-void="2">Void</button>
+          </div>
+          <div class="void-confirm" data-panel="2">
+            <p class="void-warn">This removes the reading from the batch record. This can't be undone.</p>
+            <div class="void-row">
+              <input type="text" class="void-reason" placeholder="reason for voiding (required)" aria-label="Reason for voiding this reading" />
+              <button type="button" class="btn btn-danger">Void reading</button>
+              <button type="button" class="btn btn-ghost" data-cancel="2">Cancel</button>
+            </div>
+          </div>
+        </li>
+        <li class="recent-row">
+          <div class="recent-main">
+            <span class="recent-weight">251.2 <small>g</small></span>
+            <span class="recent-product">Paracetamol 500mg Tablets · B-2026-0713</span>
+            <span class="recent-time">11:41:31</span>
+            <span class="chip chip--pending"><span class="chip__dot"></span>Pending</span>
+            <button type="button" class="btn-void" data-void="3">Void</button>
+          </div>
+          <div class="void-confirm" data-panel="3">
+            <p class="void-warn">This removes the reading from the batch record. This can't be undone.</p>
+            <div class="void-row">
+              <input type="text" class="void-reason" placeholder="reason for voiding (required)" aria-label="Reason for voiding this reading" />
+              <button type="button" class="btn btn-danger">Void reading</button>
+              <button type="button" class="btn btn-ghost" data-cancel="3">Cancel</button>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Ledger -->
+    <details class="ledger">
+      <summary>Implementation-cost ledger</summary>
+      <table>
+        <thead><tr><th>Existing components</th><th>CSS-only</th><th>New shared components</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Session card, readout card, recent-list, all `.chip`/`.btn`/`.banner` primitives — unchanged from the shipped screen.</td>
+            <td>Batch tag restyled from `.chip--pending` to a dedicated `.batch-tag` (identifier, not a status). Void panel gets a consequence line (`.void-warn`) and an `aria-label` on the reason input. `aria-live="polite"` added to the readout value.</td>
+            <td><b>Keyboard capture</b> — a `(keydown.space)` host listener on `WeighingComponent`, guarded so it's ignored while focus is in an input/select/textarea (session form, void reason). No new component, just a method + guard.<br><br><b>Batch running total</b> — `sessionBatchWeight = computed(...)` summing `recentCaptures()` filtered to the active session; new stat tile is CSS-only.</td>
+          </tr>
+        </tbody>
+      </table>
+    </details>
+
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('[data-void]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const panel = document.querySelector('[data-panel="' + btn.dataset.void + '"]');
+      panel.classList.toggle('open');
+    });
+  });
+  document.querySelectorAll('[data-cancel]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelector('[data-panel="' + btn.dataset.cancel + '"]').classList.remove('open');
+    });
+  });
+
+  const captureBtn = document.getElementById('captureBtn');
+  const flash = document.getElementById('flash');
+  const announce = document.getElementById('captureAnnounce');
+  function doCapture() {
+    flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go');
+    announce.textContent = 'Reading of 250.4 grams captured.';
+  }
+  captureBtn.addEventListener('click', doCapture);
+  document.addEventListener('keydown', (e) => {
+    const tag = (document.activeElement && document.activeElement.tagName) || '';
+    if (e.code === 'Space' && !['INPUT','SELECT','TEXTAREA'].includes(tag)) {
+      e.preventDefault();
+      doCapture();
+    }
+  });
+</script>
+</body>
+</html>

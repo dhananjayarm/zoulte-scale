@@ -41,7 +41,7 @@ export class AuthService {
    */
   changePassword(oldPassword: string, newPassword: string): Observable<{ response: boolean }> {
     const query = `oldpwd=${encodeURIComponent(oldPassword)}&newpwd=${encodeURIComponent(newPassword)}`;
-    return this.httpPost.post<{ response: boolean }>(`chpw?${query}`, '');
+    return this.httpPost.post<{ response: boolean }>(`api/chpw?${query}`, '');
   }
 
   isAuthenticated(): boolean {

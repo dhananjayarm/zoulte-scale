@@ -1,11 +1,5 @@
 .setup-page {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 20px 20px 56px;
-}
-
-.setup-page--narrow {
-  max-width: 720px;
+  padding: 20px var(--page-padding-x) 56px;
 }
 
 .setup-head h1 {

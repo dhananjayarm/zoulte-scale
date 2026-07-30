@@ -54,15 +54,6 @@
   white-space: nowrap;
 }
 
-.subtitle {
-  margin: 2px 0 0;
-  color: var(--muted);
-  font-size: 0.85rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* Right-side controls */
 .tb-right-controls {
   margin: 0;

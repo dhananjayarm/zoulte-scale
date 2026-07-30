@@ -1,0 +1,187 @@
+<div class="verification-page">
+  <header class="page-head">
+    <h1>Verification</h1>
+    <p class="section-hint">Review weighing captures and approve or reject each one.</p>
+  </header>
+
+  @if (loadError()) {
+    <div class="banner banner-error">{{ loadError() }}</div>
+  }
+  @if (actionError()) {
+    <div class="banner banner-error">{{ actionError() }}</div>
+  }
+
+  <section class="card filter-card">
+    <div class="filter-form">
+      <label class="field">
+        <span>Product</span>
+        <select [ngModel]="filterProduct()" (ngModelChange)="onFilterChange(filterProduct, $event)">
+          <option value="">All</option>
+          @for (product of products(); track product.materialCode) {
+            <option [value]="product.materialName">{{ product.materialName }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span>Manufacture Date</span>
+        <input type="date" [ngModel]="filterManufactureDate()" (ngModelChange)="onFilterChange(filterManufactureDate, $event)" />
+      </label>
+      <label class="field">
+        <span>Expiry Date</span>
+        <input type="date" [ngModel]="filterExpiryDate()" (ngModelChange)="onFilterChange(filterExpiryDate, $event)" />
+      </label>
+      <label class="field">
+        <span>Status</span>
+        <select [ngModel]="filterStatus()" (ngModelChange)="onFilterChange(filterStatus, $event)">
+          <option value="">All</option>
+          <option value="NEW">New</option>
+          <option value="APPROVED">Approved</option>
+          <option value="REJECTED">Rejected</option>
+        </select>
+      </label>
+      <button type="button" class="btn" (click)="clearFilters()">Clear</button>
+    </div>
+  </section>
+
+  <section class="card">
+    @if (isLoading()) {
+      <div class="empty-state">
+        <div class="empty-state-icon spinner"></div>
+        <h3 class="empty-state-title">Loading…</h3>
+        <p class="empty-state-text">Fetching weighing captures to verify.</p>
+      </div>
+    } @else {
+      <div class="list-title-row">
+        <div class="list-title-controls">
+          <input
+            type="search"
+            class="search-box"
+            placeholder="Search product or manufacturer…"
+            [ngModel]="searchTerm()"
+            (ngModelChange)="onSearchChange($event)"
+            [ngModelOptions]="{ standalone: true }"
+            aria-label="Search verification records"
+          />
+          <label class="page-size-field">
+            <span>Rows</span>
+            <select
+              [ngModel]="pageSize()"
+              (ngModelChange)="onPageSizeChange($event)"
+              [ngModelOptions]="{ standalone: true }"
+              aria-label="Rows per page"
+            >
+              <option [ngValue]="10">10</option>
+              <option [ngValue]="25">25</option>
+              <option [ngValue]="50">50</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      @if (pagedItems().length) {
+      <div class="table-scroll">
+        <table class="master-table">
+          <thead>
+            <tr>
+              <th>Product Name</th>
+              <th>Batch No</th>
+              <th>Date Code</th>
+              <th>Manufacturer</th>
+              <th>Mfg Date</th>
+              <th>Expiry Date</th>
+              <th>Weight</th>
+              <th>Active</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of pagedItems(); track item.id) {
+              <tr>
+                <td>{{ item.productName }}</td>
+                <td>{{ item.batchNo }}</td>
+                <td>{{ item.dateCode }}</td>
+                <td>{{ item.manufacturerName }}</td>
+                <td>{{ item.manufacturingDate | date: 'yyyy-MM-dd' }}</td>
+                <td>{{ item.expiryDate | date: 'yyyy-MM-dd' }}</td>
+                <td>{{ item.netWeight }} {{ item.unitWeight }}</td>
+                <td>{{ item.isActive ? 'Yes' : 'No' }}</td>
+                <td>
+                  <span
+                    class="status-chip"
+                    [class.status-approved]="item.status === 'APPROVED'"
+                    [class.status-rejected]="item.status === 'REJECTED'"
+                    [class.status-pending]="item.status === 'NEW'"
+                  >
+                    {{ item.status }}
+                  </span>
+                </td>
+                <td class="actions-cell">
+                  @if (item.status !== 'APPROVED' && item.status !== 'REJECTED') {
+                    <button
+                      type="button"
+                      class="btn-icon btn-icon-approve"
+                      (click)="approve(item)"
+                      [disabled]="actioningId() === item.id"
+                      title="Approve"
+                      aria-label="Approve"
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-icon btn-icon-reject"
+                      (click)="reject(item)"
+                      [disabled]="actioningId() === item.id"
+                      title="Reject"
+                      aria-label="Reject"
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
+                  } @else {
+                    <span class="no-action">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (totalPages() > 1) {
+        <div class="pagination">
+          <button type="button" class="btn btn-ghost btn-sm" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">Previous</button>
+          <div class="page-numbers">
+            @for (p of pageNumbers(); track $index) {
+              @if (p === null) {
+                <span class="page-ellipsis">…</span>
+              } @else {
+                <button type="button" class="page-num-btn" [class.active]="p === currentPage()" (click)="goToPage(p)">{{ p }}</button>
+              }
+            }
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">Next</button>
+        </div>
+      }
+      } @else if (searchTerm().trim()) {
+        <p class="empty-state-text">No records match “{{ searchTerm() }}”.</p>
+      } @else {
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 8v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8"></path>
+              <path d="M21 8l-3-5H6L3 8"></path>
+              <path d="M3 8h18"></path>
+              <path d="M9 12h6"></path>
+            </svg>
+          </div>
+          <h3 class="empty-state-title">No records to verify</h3>
+          <p class="empty-state-text">Nothing matches the current filters, or all captures have already been reviewed.</p>
+        </div>
+      }
+    }
+  </section>
+</div>

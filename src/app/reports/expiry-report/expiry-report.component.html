@@ -8,7 +8,7 @@
       </a>
       <div class="report-header-text">
         <h1>Expiry Report</h1>
-        <p>Track batches by manufacture and expiry date.</p>
+        <p>Search batches by expiry date; manufacture date shown for reference.</p>
       </div>
     </div>
 
@@ -26,12 +26,21 @@
   <section class="card filter-card">
     <form class="filter-form" [formGroup]="filterForm" (ngSubmit)="search()">
       <label class="field">
-        <span>From Date</span>
+        <span>Expiry From</span>
         <input type="date" formControlName="fromDt" />
       </label>
       <label class="field">
-        <span>To Date</span>
+        <span>Expiry To</span>
         <input type="date" formControlName="toDt" />
+      </label>
+      <label class="field">
+        <span>Product</span>
+        <select formControlName="productCode">
+          <option value="">All</option>
+          @for (product of products(); track product.materialCode) {
+            <option [value]="product.materialCode">{{ product.materialName }}</option>
+          }
+        </select>
       </label>
       <button type="submit" class="btn btn-primary" [disabled]="isLoading()">
         {{ isLoading() ? 'Searching…' : 'Search' }}
@@ -47,37 +56,115 @@
   }
 
   <section class="card">
-    @if (!hasSearched()) {
-      <p class="empty-state">Select a date range and click Search to view the report.</p>
+    @if (isLoading()) {
+      <div class="empty-state">
+        <div class="empty-state-icon spinner"></div>
+        <h3 class="empty-state-title">Loading…</h3>
+        <p class="empty-state-text">Fetching batches for the selected filters.</p>
+      </div>
+    } @else if (!hasSearched()) {
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </div>
+        <h3 class="empty-state-title">Search for a report</h3>
+        <p class="empty-state-text">Select a date range and click Search to view batches.</p>
+      </div>
     } @else if (rows().length) {
-      <table class="report-table">
-        <thead>
-          <tr>
-            <th>Product Code</th>
-            <th>Product</th>
-            <th>Batch</th>
-            <th>Manufacturer</th>
-            <th>Mfg Date</th>
-            <th>Expiry Date</th>
-            <th>Weight</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (row of rows(); track row.id) {
-            <tr>
-              <td>{{ row.productCode }}</td>
-              <td>{{ row.productName }}</td>
-              <td>{{ row.batchNo }}</td>
-              <td>{{ row.manufacturerName }}</td>
-              <td>{{ row.manufacturingDate | date: 'yyyy-MM-dd' }}</td>
-              <td>{{ row.expiryDate | date: 'yyyy-MM-dd' }}</td>
-              <td>{{ row.netWeight }} {{ row.unitWeight }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
+      <div class="results-head">
+        <h2>{{ filteredRows().length }} {{ filteredRows().length === 1 ? 'batch' : 'batches' }} found</h2>
+        <div class="list-title-controls">
+          <input
+            type="search"
+            class="search-box"
+            placeholder="Search product or manufacturer…"
+            [ngModel]="searchTerm()"
+            (ngModelChange)="onSearchChange($event)"
+            [ngModelOptions]="{ standalone: true }"
+            aria-label="Search report rows"
+          />
+          <label class="page-size-field">
+            <span>Rows</span>
+            <select
+              [ngModel]="pageSize()"
+              (ngModelChange)="onPageSizeChange($event)"
+              [ngModelOptions]="{ standalone: true }"
+              aria-label="Rows per page"
+            >
+              <option [ngValue]="10">10</option>
+              <option [ngValue]="25">25</option>
+              <option [ngValue]="50">50</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      @if (pagedRows().length) {
+        <div class="table-scroll">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Batch</th>
+                <th>Manufacturer</th>
+                <th>Mfg Date</th>
+                <th>Expiry Date</th>
+                <th>Weight</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of pagedRows(); track row.id) {
+                <tr>
+                  <td>{{ row.productName }}</td>
+                  <td>{{ row.batchNo }}</td>
+                  <td>{{ row.manufacturerName }}</td>
+                  <td>{{ row.manufacturingDate | date: 'yyyy-MM-dd' }}</td>
+                  <td>{{ row.expiryDate | date: 'yyyy-MM-dd' }}</td>
+                  <td>{{ row.netWeight }} {{ row.unitWeight }}</td>
+                  <td>
+                    <span class="status-chip" [ngClass]="expiryStatus(row.expiryDate).className">
+                      {{ expiryStatus(row.expiryDate).label }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (totalPages() > 1) {
+          <div class="pagination">
+            <button type="button" class="btn btn-ghost btn-sm" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">Previous</button>
+            <div class="page-numbers">
+              @for (p of pageNumbers(); track $index) {
+                @if (p === null) {
+                  <span class="page-ellipsis">…</span>
+                } @else {
+                  <button type="button" class="page-num-btn" [class.active]="p === currentPage()" (click)="goToPage(p)">{{ p }}</button>
+                }
+              }
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">Next</button>
+          </div>
+        }
+      } @else {
+        <p class="empty-state-text">No records match “{{ searchTerm() }}”.</p>
+      }
     } @else {
-      <p class="empty-state">No records found for the selected period.</p>
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 8v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8"></path>
+            <path d="M21 8l-3-5H6L3 8"></path>
+            <path d="M3 8h18"></path>
+            <path d="M9 12h6"></path>
+          </svg>
+        </div>
+        <h3 class="empty-state-title">No records found</h3>
+        <p class="empty-state-text">No batches match this date range or product. Try widening the filters and search again.</p>
+      </div>
     }
   </section>
 </div>

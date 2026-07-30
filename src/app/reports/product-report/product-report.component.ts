@@ -1,7 +1,9 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { Component, computed, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { HttpGetService } from '../../services/http-get.service';
 import { MaterialApiService, ProductRow } from '../../services/masters/material-api.service';
 import { WeightScaleReportItem, downloadBlob, todayIso } from '../models/weight-scale-report.model';
@@ -24,7 +26,9 @@ export class ProductReportComponent {
   readonly products = signal<ProductRow[]>([]);
   readonly isLoading = signal(false);
   readonly isExporting = signal(false);
+  readonly isExportingPdf = signal(false);
   readonly loadError = signal<string | null>(null);
+  private readonly datePipe = new DatePipe('en-US');
   readonly hasSearched = signal(false);
 
   // Local search + pagination, layered on top of the fetched rows.
@@ -157,5 +161,68 @@ export class ProductReportComponent {
           this.isExporting.set(false);
         },
       });
+  }
+
+  /** PDF export — fetches fresh data from the same list API `search()` uses, then builds the PDF client-side. */
+  exportToPdf(): void {
+    if (this.filterForm.invalid) {
+      this.filterForm.markAllAsTouched();
+      return;
+    }
+    if (this.isExportingPdf()) {
+      return;
+    }
+
+    const { fromDt, toDt, productCode } = this.filterForm.getRawValue();
+    this.isExportingPdf.set(true);
+    this.loadError.set(null);
+
+    this.httpGet
+      .getSfa<{ response?: WeightScaleReportItem[] } | WeightScaleReportItem[]>(
+        `api/weightscaleproduct/reports?${this.buildQuery(fromDt!, toDt!, productCode ?? '')}`
+      )
+      .subscribe({
+        next: (res) => {
+          const rows = Array.isArray(res) ? res : res?.response ?? [];
+          this.buildPdf(rows, fromDt!, toDt!);
+          this.isExportingPdf.set(false);
+        },
+        error: (err) => {
+          console.error('Product report PDF export failed', err);
+          this.loadError.set(`Unable to export the report. (${err?.status ?? 'network error'})`);
+          this.isExportingPdf.set(false);
+        },
+      });
+  }
+
+  private buildPdf(rows: WeightScaleReportItem[], fromDt: string, toDt: string): void {
+    const doc = new jsPDF({ orientation: 'landscape' });
+
+    doc.setFontSize(14);
+    doc.text('Product Report', 14, 16);
+    doc.setFontSize(12);
+    doc.text(`${fromDt} to ${toDt}`, 14, 22);
+
+    if (rows.length) {
+      autoTable(doc, {
+        startY: 28,
+        head: [['Product', 'Batch', 'Manufacturer', 'Mfg Date', 'Expiry Date', 'Weight']],
+        body: rows.map((row) => [
+          row.productName ?? '',
+          row.batchNo ?? '',
+          row.manufacturerName ?? '',
+          this.datePipe.transform(row.manufacturingDate, 'yyyy-MM-dd') ?? '',
+          this.datePipe.transform(row.expiryDate, 'yyyy-MM-dd') ?? '',
+          `${row.netWeight ?? ''} ${row.unitWeight ?? ''}`.trim(),
+        ]),
+        styles: { fontSize: 11 },
+        headStyles: { fillColor: [37, 99, 235] },
+      });
+    } else {
+      doc.setFontSize(11);
+      doc.text('No data found.', 14, 34);
+    }
+
+    doc.save(`product-report-${fromDt}-to-${toDt}.pdf`);
   }
 }
